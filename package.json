@@ -6,7 +6,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node --test test/*.test.js"
+    "test": "node --test test/*.test.js",
+    "export:db": "node scripts/export-database.js"
   },
   "engines": {
     "node": ">=18"

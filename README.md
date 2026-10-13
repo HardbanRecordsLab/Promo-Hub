@@ -19,6 +19,14 @@ Strategia, mapa rynku i partnerów: [docs/STRATEGIA.md](docs/STRATEGIA.md).
 - **Ścieżka artysty** (`#/artysta`) – 5 poziomów z mierzalnymi progami, plan kroków, publiczny press kit (`#/artysta/<slug>`).
 - **Drabina dostępu** – miejsca mogą wymagać minimalnego poziomu twórcy.
 
+## Global Entity Database – where to find it
+
+- **Excel:** [`database/global-database.xlsx`](database/global-database.xlsx) – "Summary" sheet (counts) + "Database" sheet (every entity, filters, clickable links, notes EN/PL).
+- **CSV:** [`database/global-database.csv`](database/global-database.csv) – same columns as the admin import, so you can edit it in a spreadsheet and import it back.
+- **In the app:** admin panel → Global Database (`#/admin/baza`) – CRM, filters, outreach, CSV export/import.
+- **Regenerate the files:** `npm run export:db && python3 scripts/export-database-xlsx.py`
+- **Grow it:** [`docs/AGENT_PROMPT_DATABASE_RESEARCH.md`](docs/AGENT_PROMPT_DATABASE_RESEARCH.md) – a step-by-step prompt for an AI research agent; its CSV output imports directly.
+
 ## Uruchomienie
 
 ```bash
