@@ -255,7 +255,7 @@ test('ścieżka artysty: profil, EPK i awans poziomu po umieszczeniach', async (
   assert.equal(p.status, 200);
   assert.equal(p.body.profile.slug, 'jan-kowalski-lodz');
   assert.equal(p.body.career.level, 1);
-  assert.equal(p.body.career.next.name, 'Lokalny');
+  assert.equal(p.body.career.next.name, 'Local');
 
   // 3 umieszczenia w 2 typach mediów → poziom „Lokalny”
   const targets = store.data.outlets.filter((o) => o.sample && o.creatorTypes.includes('music') && ['radio', 'podcast', 'newsletter'].includes(o.type));
@@ -272,13 +272,13 @@ test('ścieżka artysty: profil, EPK i awans poziomu po umieszczeniach', async (
     await api('PATCH', `/api/submissions/${s.body.submissions[0].id}`, { status: 'accepted' }, { 'x-manage-key': manageKey });
   }
   const me = await api('GET', '/api/artist/me', null, h);
-  assert.equal(me.body.career.name, 'Lokalny');
+  assert.equal(me.body.career.name, 'Local');
   assert.equal(me.body.career.metrics.placements, 3);
 
   const epk = await api('GET', '/api/artists/jan-kowalski-lodz');
   assert.equal(epk.body.placements.length, 3);
   assert.equal(epk.body.profile.contactEmail, undefined, 'e-mail nie jest publiczny');
-  assert.equal(epk.body.levelName, 'Lokalny');
+  assert.equal(epk.body.levelName, 'Local');
 });
 
 test('Pula Efektu: jeden raport przychodu, prowizje kilku kuratorów ograniczone limitem', async () => {
@@ -317,7 +317,7 @@ test('Drabina dostępu i efekt domina', async () => {
     outletIds: [big.id], artistName: 'D', artistEmail: 'd@example.com', trackTitle: 'D', trackUrl: 'https://example.com/d0', acceptTerms: true,
   });
   assert.equal(blocked.status, 400);
-  assert.match(blocked.body.error, /wymaga poziomu artysty 2/);
+  assert.match(blocked.body.error, /requires creator level 2/);
 
   // Kampania; kurator małego miejsca akceptuje → domino wysyła do większego miejsca spoza kampanii
   const kpop = { ...outletBody, genres: ['k-pop'] };
@@ -347,7 +347,7 @@ test('Drabina dostępu i efekt domina', async () => {
 
 test('typy twórców: pisarz dostaje własne miejsca, kanały i harmonogram', async () => {
   clock = new Date('2026-10-01T10:00:00Z');
-  const plan = await api('POST', '/api/campaigns/preview', { creatorType: 'writer', genre: 'kryminał', releaseDate: '2026-12-15', budgetPLN: 0 });
+  const plan = await api('POST', '/api/campaigns/preview', { creatorType: 'writer', genre: 'crime', releaseDate: '2026-12-15', budgetPLN: 0 });
   assert.equal(plan.status, 200);
   const outlets = plan.body.waves.flatMap((w) => w.outlets);
   assert.ok(outlets.length >= 3);
@@ -355,7 +355,7 @@ test('typy twórców: pisarz dostaje własne miejsca, kanały i harmonogram', as
   for (const o of store.data.outlets.filter((x) => ids.has(x.id))) assert.ok(o.creatorTypes.includes('writer'));
   assert.ok(plan.body.tasks.some((t) => t.id === 'goodreads'), 'kanały dla pisarzy');
   assert.ok(!plan.body.tasks.some((t) => t.id === 'spotify-pitch'), 'bez kanałów muzycznych');
-  assert.ok(plan.body.waves.some((w) => w.name.includes('podcasty i radio') && w.date === '2026-10-31'));
+  assert.ok(plan.body.waves.some((w) => w.name.includes('podcasts and radio') && w.date === '2026-10-31'));
 
   // muzyk nie może wysłać utworu do miejsca tylko dla pisarzy
   const blog = store.data.outlets.find((o) => o.name === 'Zakładka – blog literacki');
@@ -364,7 +364,7 @@ test('typy twórców: pisarz dostaje własne miejsca, kanały i harmonogram', as
   });
   assert.equal(r.status, 400);
   const w = await api('POST', '/api/submissions', {
-    creatorType: 'writer', genre: 'kryminał', outletIds: [blog.id], artistName: 'Autorka', artistEmail: 'a@example.com',
+    creatorType: 'writer', genre: 'crime', outletIds: [blog.id], artistName: 'Autorka', artistEmail: 'a@example.com',
     trackTitle: 'Zbrodnia', trackUrl: 'https://example.com/ksiazka', acceptTerms: true,
   });
   assert.equal(w.status, 201);
@@ -382,17 +382,17 @@ test('Światowa Baza Podmiotów: seed, CRM, CSV, outreach, konwersja i Dyrygent'
   assert.equal((await api('GET', '/api/admin/entities')).status, 403);
 
   const all = await api('GET', '/api/admin/entities', null, A);
-  assert.ok(all.body.total >= 150, `seed ma ${all.body.total} podmiotów`);
-  assert.ok(all.body.countries >= 15);
+  assert.ok(all.body.total >= 500, `seed has ${all.body.total} entities`);
+  assert.ok(all.body.countries >= 40);
   assert.ok(all.body.entities.every((e) => e.stage === 'prospect' && !e.verified && !e.publicListing), 'seed = prospekty, nie partnerzy');
   assert.ok(all.body.facets.creatorTypes.writer >= 30 && all.body.facets.creatorTypes.dj >= 25);
 
   // publicznie nic, dopóki admin nie zweryfikuje
   assert.equal((await api('GET', '/api/entities')).body.entities.length, 0);
 
-  const writers = await api('GET', '/api/admin/entities?creator=writer&region=Europa&q=festiwal', null, A);
+  const writers = await api('GET', '/api/admin/entities?creator=writer&region=EU&q=festival', null, A);
   assert.ok(writers.body.entities.length > 0);
-  assert.ok(writers.body.entities.every((e) => e.creatorTypes.includes('writer') && e.region === 'Europa'));
+  assert.ok(writers.body.entities.every((e) => e.creatorTypes.includes('writer') && e.region === 'EU'));
 
   // duplikat
   const kexp = all.body.entities.find((e) => e.name === 'KEXP');
@@ -419,7 +419,7 @@ test('Światowa Baza Podmiotów: seed, CRM, CSV, outreach, konwersja i Dyrygent'
 
   // Dyrygent dołącza zweryfikowane podmioty jako zadania
   const plan = await api('POST', '/api/campaigns/preview', { genre: 'indie', releaseDate: '2026-12-20', budgetPLN: 0 });
-  assert.ok(plan.body.tasks.some((t) => t.id === `ent-${kexp.id}` && t.group === 'Baza światowa'));
+  assert.ok(plan.body.tasks.some((t) => t.id === `ent-${kexp.id}` && t.group === 'Global Database'));
 
   // outreach PL / EN
   const o = await api('GET', `/api/admin/entities/${kexp.id}/outreach?lang=en`, null, A);
@@ -456,7 +456,7 @@ test('Symulator Monte Carlo: rozkład wyników i szansa awansu', async () => {
 
   const preview = await api('POST', '/api/campaigns/preview', { genre: 'pop', releaseDate: '2026-12-20', budgetPLN: 0 });
   assert.ok(preview.body.simulation.runs > 0);
-  assert.equal(preview.body.simulation.nextLevel, 'Lokalny');
+  assert.equal(preview.body.simulation.nextLevel, 'Local');
 });
 
 test('Autopilot kariery: uszeregowane następne ruchy', async () => {
@@ -494,4 +494,60 @@ test('Autopilot kariery: uszeregowane następne ruchy', async () => {
   clock = new Date('2026-12-03T10:00:00Z');
   r = await api('GET', '/api/artist/next-actions', null, h);
   assert.ok(r.body.actions.some((a) => a.kind === 'revenue' && a.title.includes('2026-11')));
+});
+
+test('i18n: English by default, Polish with x-lang, no untranslated objects in responses', async () => {
+  const PL = { 'x-lang': 'pl' };
+  const metaEn = (await api('GET', '/api/meta')).body;
+  const metaPl = (await api('GET', '/api/meta', null, PL)).body;
+  assert.equal(metaEn.models.commission.label, 'Commission');
+  assert.equal(metaPl.models.commission.label, 'Prowizja');
+  assert.equal(metaEn.creators.writer.label, 'Writer / author / poet');
+  assert.equal(metaPl.genreLabels.crime, 'kryminał');
+  assert.equal(metaPl.regions.EU, 'Europa');
+
+  // error messages follow the language
+  const bad = { outletIds: [], artistName: 'A', artistEmail: 'a@example.com', trackTitle: 'T', trackUrl: 'https://example.com', acceptTerms: true };
+  assert.match((await api('POST', '/api/submissions', bad)).body.error, /Choose at least one outlet/);
+  assert.match((await api('POST', '/api/submissions', bad, PL)).body.error, /Wybierz co najmniej jedno miejsce/);
+  assert.match((await api('POST', '/api/outlets', { ...outletBody, url: 'ftp://x' }, PL)).body.error, /Pole „link” musi zaczynać się od http/);
+
+  // plans: same structure, localized texts; no { en, pl } leftovers anywhere
+  const body = { creatorType: 'writer', genre: 'crime', releaseDate: '2027-03-01', budgetPLN: 0 };
+  const en = (await api('POST', '/api/campaigns/preview', body)).body;
+  const pl = (await api('POST', '/api/campaigns/preview', body, PL)).body;
+  assert.equal(en.tasks.length, pl.tasks.length);
+  assert.ok(en.tasks.some((t) => t.name === 'Editing and proofreading'));
+  assert.ok(pl.tasks.some((t) => t.name === 'Redakcja i korekta tekstu'));
+  assert.equal(en.phases[0].name, 'Foundation');
+  assert.equal(pl.phases[0].name, 'Fundament');
+  const leftovers = (v) => JSON.stringify(v).match(/\{"en":"[^"]*","pl":/);
+  assert.equal(leftovers(en), null);
+  assert.equal(leftovers(pl), null);
+  assert.equal(leftovers(metaPl), null);
+
+  // query parameter works too
+  assert.equal((await api('GET', '/api/meta?lang=pl')).body.statuses.accepted, 'Zaakceptowane');
+});
+
+test('Global Database: CSV columns from the research agent prompt are imported', async () => {
+  const A = { 'x-admin-token': 'admin-secret' };
+  const csv = [
+    'name,kind,creatorTypes,country,region,url,submission,model,tier,reach,contactEmail,notes,notesPl,sourceUrl,evidence,confidence,lastChecked',
+    'Agent Radio,radio,music|dj,de,,https://agent-radio.example,open,free,1,12000,music@agent-radio.example,"New-music show, open form.","Audycja z nową muzyką, otwarty formularz.",https://agent-radio.example/submit,"""Send us your music""",high,2026-10-13',
+  ].join('\n');
+  const r = await api('POST', '/api/admin/entities/import', { csv }, A);
+  assert.equal(r.body.added, 1, JSON.stringify(r.body.errors));
+  const found = (await api('GET', '/api/admin/entities?q=agent radio', null, A)).body.entities[0];
+  assert.equal(found.country, 'DE');
+  assert.equal(found.region, 'EU', 'region derived from the country');
+  assert.equal(found.tier, 1);
+  assert.equal(found.confidence, 'high');
+  assert.equal(found.note, 'New-music show, open form.');
+  const foundPl = (await api('GET', '/api/admin/entities?q=agent radio', null, { ...A, 'x-lang': 'pl' })).body.entities[0];
+  assert.equal(foundPl.note, 'Audycja z nową muzyką, otwarty formularz.');
+  const res = await fetch(`${base}/api/admin/entities/export`, { headers: A });
+  const text = await res.text();
+  assert.ok(text.split('\n')[0].includes('notesPl,sourceUrl,evidence,confidence,lastChecked'));
+  assert.ok(text.includes('Audycja z nową muzyką'));
 });
