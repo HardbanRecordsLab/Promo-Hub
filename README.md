@@ -2,6 +2,17 @@
 
 Platforma łącząca artystów z miejscami promocji muzyki – playlistami, radiami FM i internetowymi, kanałami YouTube, twórcami TikTok/Instagram, blogami, podcastami, newsletterami, DJ-ami, klubami i festiwalami, TV, sync i wytwórniami – na zasadach **współpracy**: prowizja od efektu, podział przychodów, opłata za odsłuch lub barter.
 
+Strategia, mapa rynku i partnerów: [docs/STRATEGIA.md](docs/STRATEGIA.md).
+
+## Najważniejsze mechanizmy
+
+- **Dyrygent kampanii** (`#/kampania`) – utwór + data premiery + budżet (także 0 zł) → dobór miejsc z każdej sekcji, harmonogram z oficjalnymi kanałami i automatyczna wysyłka zgłoszeń falami; eksport `.ics`; generator pitchu z `{nazwa}` / `{gatunki}`.
+- **Efekt domina** – akceptacja w kampanii automatycznie wysyła utwór do większych, dostępnych miejsc z dowodem społecznym w pitchu.
+- **Pula Efektu** – przychód utworu raportowany raz, prowizja dzielona między kuratorów, łącznie maks. `TRACK_COMMISSION_CAP_PERCENT` %.
+- **Ścieżka artysty** (`#/artysta`) – 5 poziomów z mierzalnymi progami, plan kroków, publiczny press kit (`#/artysta/<slug>`).
+- **Drabina dostępu** – miejsca mogą wymagać minimalnego poziomu artysty.
+- **Kanały oficjalne** (`#/kanaly`) – darmowe narzędzia platform wpinane w harmonogram.
+
 ## Uruchomienie
 
 ```bash
@@ -16,6 +27,7 @@ Bez zależności zewnętrznych (Node ≥ 18). Dane trzymane są w `data/db.json`
 | `PORT` | port HTTP (domyślnie 3000) |
 | `ADMIN_TOKEN` | token panelu administratora (`#/admin`); bez niego panel jest wyłączony |
 | `PLATFORM_FEE_PERCENT` | prowizja platformy od każdej prowizji kuratora i opłaty za odsłuch (domyślnie 20) |
+| `TRACK_COMMISSION_CAP_PERCENT` | limit łącznej prowizji wszystkich kuratorów jednego utworu (domyślnie 30) |
 | `DB_FILE` | ścieżka pliku bazy |
 
 ## Jak zarabia platforma
