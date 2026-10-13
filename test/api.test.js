@@ -202,3 +202,145 @@ test('pliki statyczne nie wychodzą poza katalog public', async () => {
   const res = await fetch(`${base}/..%2Fserver.js`);
   assert.notEqual(res.status, 200);
 });
+
+test('dyrygent kampanii: plan, fale wg dat, budżet, personalizacja pitchu', async () => {
+  clock = new Date('2026-06-01T10:00:00Z');
+  const preview = await api('POST', '/api/campaigns/preview', { genre: 'pop', releaseDate: '2026-07-15', budgetPLN: 0 });
+  assert.equal(preview.status, 200);
+  assert.equal(preview.body.spentPLN, 0);
+  assert.ok(preview.body.waves.length >= 2);
+  assert.ok(preview.body.tasks.some((t) => t.id === 'spotify-pitch' && t.date === '2026-06-24'));
+  const allOutlets = preview.body.waves.flatMap((w) => w.outlets);
+  assert.ok(allOutlets.every((o) => o.model !== 'fee'), 'bez budżetu brak płatnych miejsc');
+  assert.ok(new Set(allOutlets.map((o) => o.type)).size >= 3, 'orkiestra: różne typy miejsc');
+
+  const withBudget = await api('POST', '/api/campaigns/preview', { genre: 'indie', releaseDate: '2026-07-15', budgetPLN: 100 });
+  assert.equal(withBudget.body.spentPLN, 15);
+
+  const r = await api('POST', '/api/campaigns', {
+    artistName: 'Orkiestra', artistEmail: 'o@example.com', trackTitle: 'Symfonia',
+    trackUrl: 'https://example.com/symfonia', genre: 'pop', releaseDate: '2026-07-15', budgetPLN: 0,
+    message: 'Cześć {nazwa}!', acceptTerms: true,
+  });
+  assert.equal(r.status, 201);
+  const c = r.body.campaign;
+  const key = r.body.artistKey;
+  // 2026-06-01 → tylko fale z datą <= dziś zostały wysłane (radio T-42 = 2026-06-03 jeszcze nie)
+  assert.equal(c.waves.filter((w) => w.sent).length, 0);
+  assert.equal(c.results.sent, 0);
+
+  clock = new Date('2026-07-16T10:00:00Z');
+  const list = await api('GET', '/api/artist/campaigns', null, { 'x-artist-key': key });
+  const live = list.body.campaigns[0];
+  assert.ok(live.waves.every((w) => w.sent === (w.date <= '2026-07-16')), 'wysłane są dokładnie fale z terminem do dziś');
+  assert.ok(live.results.sent > 0);
+  const subs = (await api('GET', '/api/artist/submissions', null, { 'x-artist-key': key })).body.submissions;
+  assert.ok(subs.every((x) => x.campaignId === c.id));
+  assert.ok(subs.every((x) => x.message === `Cześć ${x.outletName}!`));
+
+  const before = live.orchestraScore;
+  const t = await api('PATCH', `/api/campaigns/${c.id}/tasks/spotify-pitch`, { done: true }, { 'x-artist-key': key });
+  assert.ok(t.body.orchestraScore > before);
+  assert.equal((await api('PATCH', `/api/campaigns/${c.id}/tasks/spotify-pitch`, { done: true }, { 'x-artist-key': 'x'.repeat(20) })).status, 403);
+});
+
+test('ścieżka artysty: profil, EPK i awans poziomu po umieszczeniach', async () => {
+  const { artistKey } = (await api('POST', '/api/artist/register')).body;
+  const h = { 'x-artist-key': artistKey };
+  assert.equal((await api('GET', '/api/artist/me', null, h)).status, 404);
+  const p = await api('PUT', '/api/artist/profile', {
+    name: 'Jan Kowalski Łódź', bio: 'Debiutant', genres: ['pop'], monthlyListeners: 600,
+    contactEmail: 'jan@example.com', links: { spotify: 'https://open.spotify.com/artist/x' },
+  }, h);
+  assert.equal(p.status, 200);
+  assert.equal(p.body.profile.slug, 'jan-kowalski-lodz');
+  assert.equal(p.body.career.level, 1);
+  assert.equal(p.body.career.next.name, 'Lokalny');
+
+  // 3 umieszczenia w 2 typach mediów → poziom „Lokalny”
+  const targets = store.data.outlets.filter((o) => o.sample && ['radio', 'podcast', 'newsletter'].includes(o.type));
+  for (const [i, o] of targets.entries()) {
+    const key = 'k'.repeat(10) + i;
+    const manageKey = `curator-key-${i}-xxxxxxxx`;
+    o.manageKeyHash = require('../lib/db').hashSecret(manageKey);
+    const s = await api('POST', '/api/submissions', {
+      outletIds: [o.id], artistName: 'Jan', artistEmail: 'jan@example.com', trackTitle: `T${key}`,
+      trackUrl: `https://example.com/jan-${i}`, acceptTerms: true, artistKey,
+    });
+    const inbox = await api('GET', `/api/outlets/${o.id}/submissions`, null, { 'x-manage-key': manageKey });
+    assert.equal(inbox.body.submissions.find((x) => x.id === s.body.submissions[0].id).artistSlug, 'jan-kowalski-lodz');
+    await api('PATCH', `/api/submissions/${s.body.submissions[0].id}`, { status: 'accepted' }, { 'x-manage-key': manageKey });
+  }
+  const me = await api('GET', '/api/artist/me', null, h);
+  assert.equal(me.body.career.name, 'Lokalny');
+  assert.equal(me.body.career.metrics.placements, 3);
+
+  const epk = await api('GET', '/api/artists/jan-kowalski-lodz');
+  assert.equal(epk.body.placements.length, 3);
+  assert.equal(epk.body.profile.contactEmail, undefined, 'e-mail nie jest publiczny');
+  assert.equal(epk.body.levelName, 'Lokalny');
+});
+
+test('Pula Efektu: jeden raport przychodu, prowizje kilku kuratorów ograniczone limitem', async () => {
+  clock = new Date('2026-08-01T10:00:00Z');
+  const { hashSecret } = require('../lib/db');
+  const outlets = [];
+  for (let i = 0; i < 3; i += 1) {
+    const r = await api('POST', '/api/outlets', { ...outletBody, name: `Pula ${i}`, collaboration: { model: 'commission', ratePercent: 20, durationMonths: 6 } });
+    outlets.push(r.body);
+  }
+  const s = await api('POST', '/api/submissions', {
+    outletIds: outlets.map((o) => o.outlet.id), artistName: 'P', artistEmail: 'p@example.com', trackTitle: 'Pula',
+    trackUrl: 'https://example.com/pula', acceptTerms: true,
+  });
+  for (const [i, sub] of s.body.submissions.entries()) {
+    await api('PATCH', `/api/submissions/${sub.id}`, { status: 'accepted' }, { 'x-manage-key': outlets[i].manageKey });
+  }
+  const h = { 'x-artist-key': s.body.artistKey };
+  const r = await api('POST', `/api/submissions/${s.body.submissions[0].id}/revenue`, { period: '2026-08', amountPLN: 1000 }, h);
+  assert.equal(r.status, 201);
+  assert.equal(r.body.pool.size, 3);
+  assert.equal(r.body.pool.sumRatesPercent, 60);
+  assert.equal(r.body.pool.totalCommissionPLN, 300, '3 × 20% = 60% ograniczone do 30%');
+  assert.equal(r.body.entry.commissionPLN, 100);
+  // ten sam okres z innego zgłoszenia tego utworu – odrzucony (brak podwójnego raportu)
+  const dup = await api('POST', `/api/submissions/${s.body.submissions[1].id}/revenue`, { period: '2026-08', amountPLN: 1000 }, h);
+  assert.equal(dup.status, 409);
+  void hashSecret;
+});
+
+test('Drabina dostępu i efekt domina', async () => {
+  clock = new Date('2026-09-01T10:00:00Z');
+  const big = store.data.outlets.find((o) => o.name === 'SoundCheck PL');
+  assert.equal(big.minLevel, 2);
+  const blocked = await api('POST', '/api/submissions', {
+    outletIds: [big.id], artistName: 'D', artistEmail: 'd@example.com', trackTitle: 'D', trackUrl: 'https://example.com/d0', acceptTerms: true,
+  });
+  assert.equal(blocked.status, 400);
+  assert.match(blocked.body.error, /wymaga poziomu artysty 2/);
+
+  // Kampania; kurator małego miejsca akceptuje → domino wysyła do większego miejsca spoza kampanii
+  const kpop = { ...outletBody, genres: ['k-pop'] };
+  const small = await api('POST', '/api/outlets', { ...kpop, name: 'Mała playlista', reach: 50 });
+  const c = await api('POST', '/api/campaigns', {
+    artistName: 'Domino', artistEmail: 'dom@example.com', trackTitle: 'Domino', trackUrl: 'https://example.com/domino',
+    genre: 'k-pop', releaseDate: '2026-08-25', budgetPLN: 0, message: 'Hej {nazwa}', acceptTerms: true,
+  });
+  const key = c.body.artistKey;
+  const bigNew = await api('POST', '/api/outlets', { ...kpop, name: 'Duża playlista', reach: 100000 });
+  const locked = await api('POST', '/api/outlets', { ...kpop, name: 'Elitarna playlista', reach: 900000 });
+  await api('PATCH', `/api/outlets/${locked.body.outlet.id}`, { minLevel: 4 }, { 'x-manage-key': locked.body.manageKey });
+
+  let subs = (await api('GET', '/api/artist/submissions', null, { 'x-artist-key': key })).body.submissions;
+  const onSmall = subs.find((x) => x.outletId === small.body.outlet.id);
+  assert.ok(onSmall, 'mała playlista jest w kampanii');
+  await api('PATCH', `/api/submissions/${onSmall.id}`, { status: 'accepted' }, { 'x-manage-key': small.body.manageKey });
+
+  subs = (await api('GET', '/api/artist/submissions', null, { 'x-artist-key': key })).body.submissions;
+  const camp = (await api('GET', '/api/artist/campaigns', null, { 'x-artist-key': key })).body.campaigns[0];
+  const domino = camp.waves.find((w) => w.domino);
+  assert.ok(domino && domino.sent, 'powstała i wyszła fala domina');
+  const fresh = subs.filter((x) => domino.submissionIds.includes(x.id));
+  assert.deepEqual(fresh.map((x) => x.outletId), [bigNew.body.outlet.id], 'tylko większe, dostępne miejsce');
+  assert.match(fresh[0].message, /Mała playlista/, 'pitch zawiera dowód społeczny');
+});

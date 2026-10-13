@@ -105,7 +105,7 @@
           ${o.country ? `<span>📍 ${esc(o.country)}</span>` : ''}
         </div>
         <div class="tags">${(o.genres.length ? o.genres : ['wszystkie gatunki']).map((g) => `<span class="tag">${esc(g)}</span>`).join('')}</div>
-        <div>${o.verified ? '<span class="verified">✔ zweryfikowany</span>' : '<span class="muted small">niezweryfikowany</span>'} ${o.sample ? '<span class="sample">· przykład</span>' : ''}</div>
+        <div>${o.verified ? '<span class="verified">✔ zweryfikowany</span>' : '<span class="muted small">niezweryfikowany</span>'} ${o.sample ? '<span class="sample">· przykład</span>' : ''} ${(o.minLevel || 1) > 1 ? `<span class="tag">🔒 od poziomu ${o.minLevel}</span>` : ''}</div>
         <div class="actions">
           ${o.acceptsSubmissions
             ? `<button class="btn small ${sel ? '' : 'primary'}" data-cart="${esc(o.id)}">${sel ? '✓ Wybrane' : '+ Dodaj do zgłoszenia'}</button>`
@@ -130,10 +130,11 @@
     const s = await api('GET', '/api/stats');
     app.innerHTML = `
       <section class="hero">
-        <h1>Twoja muzyka w <span class="grad">playlistach, radiach i kanałach</span>. Płacisz za efekt.</h1>
-        <p class="lead">Promo Hub łączy artystów z kuratorami playlist, stacjami radiowymi, YouTube’em, TikTokiem, blogami, podcastami, DJ-ami i sync. Bez kupowania kredytów w ciemno: w modelu prowizyjnym kurator zarabia dopiero wtedy, gdy Twój utwór zarabia.</p>
+        <h1>Z anonimowego debiutanta w <span class="grad">artystę, którego słucha świat</span>.</h1>
+        <p class="lead">Promo Hub gra jak orkiestra: playlisty, radia, YouTube, TikTok, blogi, podcasty, DJ-e, festiwale i sync – zsynchronizowane w jednej kampanii, wysyłanej falami w najlepszym momencie. Płacisz za efekt: w modelu prowizyjnym kurator zarabia dopiero wtedy, gdy Twój utwór zarabia.</p>
         <div class="cta-row">
-          <a class="btn primary" href="#/dopasuj">Znajdź miejsca dla swojego utworu</a>
+          <a class="btn primary" href="#/kampania">🎼 Uruchom kampanię – od 0 zł</a>
+          <a class="btn" href="#/artysta">Sprawdź swój poziom</a>
           <a class="btn" href="#/kurator">Dodaj swoją playlistę lub radio</a>
         </div>
       </section>
@@ -143,10 +144,19 @@
         <div class="stat"><b>${num(s.submissions)}</b><span>zgłoszonych utworów</span></div>
         <div class="stat"><b>${num(s.placed)}</b><span>umieszczonych utworów</span></div>
       </div>
+      <h2>Ścieżka artysty: 5 poziomów</h2>
+      <div class="levels big">
+        <div class="lvl"><b>1</b><span>Debiutant</span><small>profil, press kit, pierwsze umieszczenia</small></div>
+        <div class="lvl"><b>2</b><span>Lokalny</span><small>radia regionalne, podcasty, pierwsze playlisty</small></div>
+        <div class="lvl"><b>3</b><span>Krajowy</span><small>YouTube, TikTok, blogi, duże playlisty</small></div>
+        <div class="lvl"><b>4</b><span>Międzynarodowy</span><small>zagraniczne playlisty i radia, sync, festiwale</small></div>
+        <div class="lvl"><b>5</b><span>Globalny</span><small>6+ krajów, featuringi, własna audycja</small></div>
+      </div>
+      <p class="muted">Każdy poziom ma mierzalne cele liczone z prawdziwych umieszczeń – i konkretny plan kolejnych kroków.</p>
       <h2>Jak to działa</h2>
       <div class="steps">
-        <div class="step"><h3>Dopasuj</h3><p class="muted">Wybierz gatunek, a ranking pokaże miejsca, które realnie przyjmują taką muzykę i odpowiadają w terminie.</p></div>
-        <div class="step"><h3>Wyślij jednym formularzem</h3><p class="muted">Jedno zgłoszenie do nawet 25 playlist, radiów i kanałów. Warunki każdego miejsca widzisz przed wysłaniem.</p></div>
+        <div class="step"><h3>Dyrygent dobiera orkiestrę</h3><p class="muted">Podajesz utwór, datę premiery i budżet (także 0 zł). System wybiera najlepsze miejsca z każdej sekcji: radio, playlisty, video, media, DJ-e.</p></div>
+        <div class="step"><h3>Fale w idealnym momencie</h3><p class="muted">Radio 6 tygodni przed premierą, media 3 tygodnie, twórcy 2 tygodnie, playlisty w dniu premiery – wysyłane automatycznie, z osobistym pitchem do każdego kuratora.</p></div>
         <div class="step"><h3>Gwarancja odpowiedzi</h3><p class="muted">Kurator ma ustalony termin. Brak decyzji = zgłoszenie wygasa, a kurator spada w rankingu.</p></div>
         <div class="step"><h3>Rozliczenie od efektu</h3><p class="muted">Po umieszczeniu utworu zgłaszasz przychody, a system sam wylicza prowizję tylko za okres umowy.</p></div>
       </div>
@@ -155,6 +165,10 @@
         <table class="compare">
           <thead><tr><th></th><th>Promo Hub</th><th>Typowe serwisy płatnych zgłoszeń</th></tr></thead>
           <tbody>
+            <tr><td>Dyrygent kampanii: jedna premiera, wszystkie media, fale w optymalnym czasie</td><td class="yes">automatycznie</td><td class="no">ręcznie, zgłoszenie po zgłoszeniu</td></tr>
+            <tr><td>Efekt domina: akceptacja automatycznie otwiera większe miejsca</td><td class="yes">tak, z dowodem społecznym w pitchu</td><td class="no">—</td></tr>
+            <tr><td>Pula Efektu: łączna prowizja utworu ograniczona limitem</td><td class="yes">tak, maks. ${esc(META.trackCommissionCapPercent)}% niezależnie od liczby kuratorów</td><td class="no">—</td></tr>
+            <tr><td>Ścieżka artysty i Drabina dostępu</td><td class="yes">5 poziomów, mierzalne cele, plan kroków</td><td class="no">—</td></tr>
             <tr><td>Koszt dla artysty z góry</td><td class="yes">0 zł w modelu prowizyjnym</td><td class="no">kredyty za każde zgłoszenie</td></tr>
             <tr><td>Kurator zarabia, gdy…</td><td class="yes">utwór przynosi przychód</td><td class="no">tylko przesłucha</td></tr>
             <tr><td>Rodzaje miejsc</td><td class="yes">playlisty, radio FM i online, YouTube, TikTok, Instagram, blogi, podcasty, DJ-e, kluby, TV, sync, wytwórnie</td><td class="no">głównie playlisty i blogi</td></tr>
@@ -354,55 +368,285 @@
     return `<table class="rev"><thead><tr><th>Okres</th><th>Przychód</th><th>Prowizja</th><th>Status</th></tr></thead><tbody>
       ${sub.revenue.map((r) => `<tr>
         <td>${esc(r.period)}</td><td>${pln(r.amountPLN)}</td>
-        <td>${r.inAgreement ? pln(r.commissionPLN) : '<span class="muted">poza umową</span>'}</td>
+        <td>${r.inAgreement ? `${pln(r.commissionPLN)}${r.poolSize > 1 ? ` <span class="muted small">(Pula: ${esc(r.effectiveRatePercent)}%, ${r.poolSize} kuratorów)</span>` : ''}` : '<span class="muted">poza umową</span>'}</td>
         <td>${r.commissionPLN ? (r.paid ? '<span class="yes">opłacona</span>' : (curatorKey ? `<button class="btn small" data-paid="${esc(sub.id)}|${esc(r.id)}">Potwierdź wpłatę</button>` : 'do zapłaty')) : '—'}</td>
       </tr>`).join('')}
     </tbody></table>`;
+  }
+
+  // ---------- kalendarz (.ics) ----------
+  function downloadIcs(campaign) {
+    const d = (iso) => iso.replace(/-/g, '');
+    const escIcs = (t) => String(t).replace(/[\;,]/g, (c) => `\\${c}`).replace(/\n/g, '\\n');
+    const events = [
+      ...campaign.waves.map((w, i) => ({ uid: `${campaign.id}-w${i}`, date: w.date, title: `${w.name} (${w.outlets.length} miejsc)`, desc: w.how })),
+      ...campaign.tasks.map((t) => ({ uid: `${campaign.id}-${t.id}`, date: t.date, title: t.name, desc: `${t.how} ${t.url}` })),
+    ];
+    const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Promo Hub//Kampania//PL', 'CALSCALE:GREGORIAN'];
+    const stamp = `${new Date().toISOString().replace(/[-:]/g, '').slice(0, 15)}Z`;
+    for (const e of events) {
+      const next = new Date(Date.parse(`${e.date}T00:00:00Z`) + 864e5).toISOString().slice(0, 10);
+      lines.push('BEGIN:VEVENT', `UID:${e.uid}@promohub`, `DTSTAMP:${stamp}`, `DTSTART;VALUE=DATE:${d(e.date)}`,
+        `DTEND;VALUE=DATE:${d(next)}`, `SUMMARY:${escIcs(`[${campaign.trackTitle}] ${e.title}`)}`, `DESCRIPTION:${escIcs(e.desc)}`, 'END:VEVENT');
+    }
+    lines.push('END:VCALENDAR');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([lines.join('\r\n')], { type: 'text/calendar' }));
+    a.download = `kampania-${campaign.trackTitle.replace(/[^\w-]+/g, '_')}.ics`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+
+  // ---------- generator pitchu ----------
+  function generatePitch(d, profile) {
+    const genre = d.genre || 'mój gatunek';
+    const when = d.releaseDate ? ` Premiera: ${new Date(`${d.releaseDate}T00:00:00Z`).toLocaleDateString('pl-PL')}.` : '';
+    const ach = profile && profile.achievements ? `\n\nDotychczas: ${profile.achievements}` : '';
+    return `Cześć {nazwa}!\n\nJestem ${d.artistName || '[artysta]'} i tworzę ${genre}. Śledzę Twoje wybory ({gatunki}) i myślę, że „${d.trackTitle || '[tytuł]'}” pasuje do tego, co prezentujesz.${when}${ach}\n\nDzięki za odsłuch – każdy feedback jest dla mnie cenny!`;
+  }
+
+  function planView(plan, { forCampaign = null, key = null } = {}) {
+    const today = new Date().toISOString().slice(0, 10);
+    const timeline = [
+      ...plan.waves.map((w, i) => ({ kind: 'wave', i, date: w.date, w })),
+      ...plan.tasks.map((t) => ({ kind: 'task', date: t.date, t })),
+    ].sort((a, b) => a.date.localeCompare(b.date));
+    return `
+      <div class="stats">
+        <div class="stat"><b>${plan.waves.reduce((a, w) => a + w.outlets.length, 0)}</b><span>miejsc w ${plan.waves.length} falach</span></div>
+        <div class="stat"><b>${(plan.sections || []).length}</b><span>sekcji orkiestry (typów mediów)</span></div>
+        <div class="stat"><b>~${num(plan.forecast.placements)}</b><span>prognozowanych umieszczeń</span></div>
+        <div class="stat"><b>~${num(plan.forecast.reach)}</b><span>prognozowany zasięg</span></div>
+        <div class="stat"><b>${pln(plan.spentPLN)}</b><span>koszt z góry</span></div>
+      </div>
+      <div class="timeline">
+        ${timeline.map((e) => e.kind === 'wave' ? `
+          <div class="tl tl-wave${e.w.domino ? ' tl-domino' : ''}${e.w.sent ? ' done' : ''}">
+            <div class="tl-date">${esc(e.date)}</div>
+            <div>
+              <b>${e.w.domino ? '🁢' : '🎼'} ${esc(e.w.name)}</b> ${e.w.sent ? '<span class="yes small">wysłana</span>' : (forCampaign ? `<button class="btn small" data-send="${e.i}">Wyślij teraz</button>` : '')}
+              <div class="muted small">${esc(e.w.how)}</div>
+              <div class="tags">${e.w.outlets.map((o) => `<a class="tag" href="#/miejsce/${esc(o.id)}">${esc(o.name)} · ${esc(META.models[o.model]?.label || '')}</a>`).join('')}</div>
+            </div>
+          </div>` : `
+          <div class="tl${e.t.done ? ' done' : ''}${!e.t.done && e.date < today && forCampaign ? ' late' : ''}">
+            <div class="tl-date">${esc(e.date)}</div>
+            <div>
+              ${forCampaign ? `<label class="check"><input type="checkbox" data-task="${esc(e.t.id)}" ${e.t.done ? 'checked' : ''}> <b>${esc(e.t.name)}</b></label>` : `<b>${esc(e.t.name)}</b>`}
+              <span class="tag">${esc(e.t.group)}</span>
+              <div class="muted small">${esc(e.t.how)} ${e.t.url ? `<a href="${esc(e.t.url)}" target="_blank" rel="noopener noreferrer">otwórz ↗</a>` : ''}</div>
+            </div>
+          </div>`).join('')}
+      </div>`;
+  }
+
+  async function viewCampaign() {
+    const profile = storage.get('artistProfile', {});
+    const key = storage.get('artistKey');
+    let me = null;
+    if (key) me = await api('GET', '/api/artist/me', null, { 'x-artist-key': key }).catch(() => null);
+    const p = (me && me.profile) || {};
+    const releaseDefault = new Date(Date.now() + 42 * 864e5).toISOString().slice(0, 10);
+    app.innerHTML = `
+      <h1>🎼 Dyrygent kampanii</h1>
+      <p class="lead muted">Jeden formularz, cała orkiestra: system dobiera najlepsze miejsca w ramach budżetu, układa harmonogram z oficjalnymi kanałami (Spotify, TikTok, YouTube, radio…) i sam wysyła zgłoszenia falami w optymalnym momencie – radio 6 tygodni przed premierą, media 3 tygodnie, twórcy 2 tygodnie, playlisty w dniu premiery.</p>
+      <form class="form" id="cf">
+        <div class="row">
+          <div class="field"><label>Artysta *</label><input name="artistName" required value="${esc(p.name || profile.artistName)}"></div>
+          <div class="field"><label>E-mail *</label><input name="artistEmail" type="email" required value="${esc(p.contactEmail || profile.artistEmail)}"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Tytuł utworu *</label><input name="trackTitle" required maxlength="160"></div>
+          <div class="field"><label>Gatunek *</label><select name="genre" required>${options(META.genres, storage.get('matchGenre', '') || (p.genres || [])[0] || '', 'Wybierz')}</select></div>
+        </div>
+        <div class="field"><label>Link do utworu (może być prywatny) *</label><input name="trackUrl" type="url" required placeholder="https://"></div>
+        <div class="row">
+          <div class="field"><label>Data premiery *</label><input name="releaseDate" type="date" required value="${releaseDefault}"><div class="hint">Najlepiej 6 tygodni od dziś – zdążysz z radiem i pitchem redakcyjnym.</div></div>
+          <div class="field"><label>Budżet na opłaty za odsłuch (zł)</label><input name="budgetPLN" type="number" min="0" step="1" value="0"><div class="hint">0 zł = tylko prowizja, bezpłatne i barter. Płacisz za efekt.</div></div>
+        </div>
+        <div class="field"><label>Pitch do kuratorów <button class="btn small ghost" type="button" id="genPitch">✨ Wygeneruj</button></label>
+          <textarea name="message" maxlength="2000" rows="7" placeholder="{nazwa} i {gatunki} zostaną podmienione dla każdego kuratora."></textarea></div>
+        <div class="cta-row"><button class="btn" type="button" id="previewBtn">Pokaż plan</button></div>
+        <div id="plan"></div>
+        <label class="check"><input type="checkbox" name="acceptTerms" required> Akceptuję warunki współpracy miejsc z planu i zobowiązuję się raportować przychody w okresie umów prowizyjnych.</label>
+        <button class="btn primary" type="submit">🚀 Uruchom kampanię</button>
+      </form>`;
+    const form = document.getElementById('cf');
+    document.getElementById('genPitch').addEventListener('click', () => {
+      form.querySelector('[name=message]').value = generatePitch(formData(form), p);
+    });
+    const preview = async () => {
+      const d = formData(form);
+      if (!d.genre) throw new Error('Wybierz gatunek.');
+      const plan = await api('POST', '/api/campaigns/preview', { genre: d.genre, releaseDate: d.releaseDate, budgetPLN: d.budgetPLN });
+      document.getElementById('plan').innerHTML = plan.waves.length
+        ? `<div class="panel"><h2>Plan kampanii</h2>${planView(plan)}</div>`
+        : '<div class="notice warn">Brak pasujących miejsc – zmień gatunek lub zwiększ budżet.</div>';
+    };
+    document.getElementById('previewBtn').addEventListener('click', () => preview().catch((e) => toast(e.message, true)));
+    onSubmit(form, async (d) => {
+      if (!d.message) d.message = generatePitch(d, p);
+      const body = { ...d, acceptTerms: d.acceptTerms === 'on' };
+      if (key) body.artistKey = key;
+      const r = await api('POST', '/api/campaigns', body);
+      storage.set('artistKey', r.artistKey);
+      storage.set('artistProfile', { artistName: d.artistName, artistEmail: d.artistEmail });
+      app.innerHTML = `
+        <h1>Kampania wystartowała! 🎼</h1>
+        <div class="notice ok">„${esc(r.campaign.trackTitle)}”: ${r.campaign.waves.length} fal, ${r.campaign.waves.reduce((a, w) => a + w.outlets.length, 0)} miejsc. ${r.campaign.results.sent ? `Pierwsze ${r.campaign.results.sent} zgłoszeń już wysłane.` : 'Pierwsza fala wyjdzie automatycznie w zaplanowanym terminie.'}</div>
+        ${key ? '' : `<div class="notice warn"><b>Zapisz swój klucz artysty</b> – to dostęp do panelu z innego urządzenia:<br><br><span class="key">${esc(r.artistKey)}</span></div>`}
+        <div class="cta-row"><a class="btn primary" href="#/artysta">Przejdź do panelu</a><button class="btn" id="ics">📅 Dodaj do kalendarza</button></div>`;
+      document.getElementById('ics').addEventListener('click', () => downloadIcs(r.campaign));
+    });
+  }
+
+  async function viewChannels() {
+    const groups = {};
+    for (const c of META.channels) (groups[c.group] = groups[c.group] || []).push(c);
+    app.innerHTML = `
+      <h1>Oficjalne kanały promocji</h1>
+      <p class="muted">Darmowe narzędzia platform, z których każdy artysta powinien korzystać równolegle z kampanią w Promo Hub. Dyrygent kampanii wpisuje je automatycznie do harmonogramu. Zasady platform się zmieniają – zawsze sprawdź u źródła.</p>
+      ${Object.entries(groups).map(([g, list]) => `
+        <h2>${esc(g)}</h2>
+        <div class="grid">${list.map((c) => `
+          <div class="card">
+            <div class="card-head"><h3>${esc(c.name)}</h3><span class="model model-${c.cost === 'free' ? 'free' : 'fee'}">${c.cost === 'free' ? '0 zł' : 'płatne'}</span></div>
+            <div class="meta"><span>📍 ${esc(c.region)}</span><span>⚡ wpływ ${'●'.repeat(c.impact)}${'○'.repeat(5 - c.impact)}</span><span>⏱ ${c.offsetDays < 0 ? `${-c.offsetDays} dni przed premierą` : c.offsetDays === 0 ? 'w dniu premiery' : `${c.offsetDays} dni po premierze`}</span></div>
+            <p class="muted">${esc(c.how)}</p>
+            <div class="actions"><a class="btn small ghost" href="${esc(c.url)}" target="_blank" rel="noopener noreferrer">Otwórz ↗</a></div>
+          </div>`).join('')}</div>`).join('')}`;
+  }
+
+  async function viewEpk(slug) {
+    const d = await api('GET', `/api/artists/${encodeURIComponent(slug)}`);
+    const p = d.profile;
+    const linkNames = { spotify: 'Spotify', youtube: 'YouTube', instagram: 'Instagram', tiktok: 'TikTok', soundcloud: 'SoundCloud', website: 'Strona' };
+    app.innerHTML = `
+      <div class="epk">
+        ${p.photoUrl ? `<img class="epk-photo" src="${esc(p.photoUrl)}" alt="${esc(p.name)}" referrerpolicy="no-referrer">` : '<div class="epk-photo placeholder">♪</div>'}
+        <div>
+          <div class="muted">Press kit · Promo Hub</div>
+          <h1>${esc(p.name)}</h1>
+          <p><span class="level">Poziom ${d.level}: ${esc(d.levelName)}</span> ${p.city || p.country ? `<span class="muted">📍 ${esc([p.city, p.country].filter(Boolean).join(', '))}</span>` : ''}</p>
+          <div class="tags">${(p.genres || []).map((g) => `<span class="tag">${esc(g)}</span>`).join('')}</div>
+          <p class="cta-row">${Object.entries(p.links || {}).filter(([, u]) => u).map(([k, u]) => `<a class="btn small" href="${esc(u)}" target="_blank" rel="noopener noreferrer nofollow">${esc(linkNames[k] || k)} ↗</a>`).join('')}</p>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="stat"><b>${num(d.metrics.placements)}</b><span>umieszczeń</span></div>
+        <div class="stat"><b>${num(d.metrics.reach)}</b><span>zasięg umieszczeń</span></div>
+        <div class="stat"><b>${num(d.metrics.countries)}</b><span>krajów</span></div>
+        <div class="stat"><b>${num(d.metrics.listeners)}</b><span>słuchaczy / mies.</span></div>
+      </div>
+      <div class="split">
+        <div class="panel"><h2>Bio</h2><p>${esc(p.bio) || '<span class="muted">—</span>'}</p>${p.bioEn ? `<h3>English</h3><p>${esc(p.bioEn)}</p>` : ''}${p.achievements ? `<h3>Osiągnięcia</h3><p>${esc(p.achievements)}</p>` : ''}</div>
+        <div class="panel"><h2>Gdzie grano</h2>${d.placements.length ? d.placements.map((x) => `<p><b>${esc(x.trackTitle)}</b> → ${esc(x.outletName)} <span class="muted small">${esc(META.types[x.outletType] || '')}${x.country ? ` · ${esc(x.country)}` : ''}</span>${x.placementUrl ? ` <a href="${esc(x.placementUrl)}" target="_blank" rel="noopener noreferrer nofollow">↗</a>` : ''}</p>`).join('') : '<p class="muted">Pierwsze umieszczenia w drodze.</p>'}</div>
+      </div>`;
+  }
+
+  function careerView(career) {
+    const n = career.next;
+    return `
+      <div class="panel career">
+        <div class="levels">${career.levels.map((l) => `<div class="lvl${l.level === career.level ? ' current' : ''}${l.level < career.level ? ' passed' : ''}"><b>${l.level}</b><span>${esc(l.name)}</span></div>`).join('')}</div>
+        <h2>Jesteś na poziomie ${career.level}: ${esc(career.name)}</h2>
+        ${n ? `
+          <p class="muted">Cel poziomu ${n.level} (${esc(n.name)}): ${esc(n.goal)}</p>
+          <div class="score"><span>${n.percent}%</span><progress max="100" value="${n.percent}"></progress></div>
+          <div class="tags">${n.progress.map((x) => `<span class="tag${x.done ? ' tag-ok' : ''}">${x.done ? '✓' : '○'} ${esc(x.label)}: ${num(x.value)} / ${num(x.target)}</span>`).join('')}</div>`
+        : '<p class="yes">Najwyższy poziom – teraz utrzymaj rytm i otwieraj kolejne rynki.</p>'}
+        <h3>Następne kroki</h3>
+        <ol>${career.steps.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>
+        <div class="cta-row"><a class="btn primary" href="#/kampania">🎼 Nowa kampania</a></div>
+      </div>`;
+  }
+
+  function profileForm(p = {}) {
+    const l = p.links || {};
+    return `
+      <form class="form" id="pf">
+        <div class="row">
+          <div class="field"><label>Nazwa artysty *</label><input name="name" required maxlength="120" value="${esc(p.name)}"></div>
+          <div class="field"><label>E-mail do mediów (niepubliczny)</label><input name="contactEmail" type="email" value="${esc(p.contactEmail)}"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Kraj</label><input name="country" value="${esc(p.country)}"></div>
+          <div class="field"><label>Miasto</label><input name="city" value="${esc(p.city)}"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Zdjęcie (URL)</label><input name="photoUrl" type="url" value="${esc(p.photoUrl)}"></div>
+          <div class="field"><label>Słuchacze miesięcznie (łącznie)</label><input name="monthlyListeners" type="number" min="0" value="${esc(p.monthlyListeners ?? 0)}"></div>
+        </div>
+        <div class="field"><label>Gatunki</label><select name="genres" multiple size="5">${META.genres.map((g) => `<option${(p.genres || []).includes(g) ? ' selected' : ''}>${esc(g)}</option>`).join('')}</select></div>
+        <div class="field"><label>Bio (PL)</label><textarea name="bio" maxlength="3000">${esc(p.bio)}</textarea></div>
+        <div class="field"><label>Bio (EN) – na rynki zagraniczne</label><textarea name="bioEn" maxlength="3000">${esc(p.bioEn)}</textarea></div>
+        <div class="field"><label>Osiągnięcia (trafiają do pitchu)</label><textarea name="achievements" maxlength="2000">${esc(p.achievements)}</textarea></div>
+        <div class="row">${['spotify', 'youtube', 'instagram', 'tiktok', 'soundcloud', 'website'].map((k) => `<div class="field"><label>${esc(k)}</label><input name="link_${k}" type="url" value="${esc(l[k])}" placeholder="https://"></div>`).join('')}</div>
+        <button class="btn primary" type="submit">Zapisz profil</button>
+      </form>`;
   }
 
   async function viewArtist() {
     const key = storage.get('artistKey');
     if (!key) {
       app.innerHTML = `
-        <h1>Panel artysty</h1>
-        <p class="muted">Wpisz klucz artysty otrzymany po pierwszym zgłoszeniu.</p>
-        <form class="form" id="kf"><div class="field"><label>Klucz artysty</label><input name="key" required minlength="16"></div><button class="btn primary" type="submit">Zaloguj</button></form>
-        <p class="muted">Nie masz klucza? <a href="#/dopasuj">Wyślij pierwszy utwór</a>.</p>`;
+        <h1>Ścieżka artysty</h1>
+        <p class="lead muted">Od pierwszego utworu do sceny międzynarodowej: 5 poziomów, mierzalne cele i plan następnych kroków.</p>
+        <div class="split">
+          <div class="panel"><h2>Zaczynam</h2><p class="muted">Załóż profil i press kit – kampanię uruchomisz w kilka minut.</p><button class="btn primary" id="reg">Załóż profil artysty</button></div>
+          <div class="panel"><h2>Mam klucz</h2>
+            <form class="form" id="kf"><div class="field"><label>Klucz artysty</label><input name="key" required minlength="16"></div><button class="btn" type="submit">Zaloguj</button></form></div>
+        </div>`;
       onSubmit(document.getElementById('kf'), async (d) => {
-        await api('GET', '/api/artist/submissions', null, { 'x-artist-key': d.key.trim() });
+        await api('GET', '/api/artist/me', null, { 'x-artist-key': d.key.trim() });
         storage.set('artistKey', d.key.trim());
         viewArtist();
       });
+      document.getElementById('reg').addEventListener('click', async () => {
+        try {
+          const r = await api('POST', '/api/artist/register');
+          storage.set('artistKey', r.artistKey);
+          storage.set('newArtist', true);
+          viewArtist();
+        } catch (e) { toast(e.message, true); }
+      });
       return;
     }
-    let subs;
-    try {
-      ({ submissions: subs } = await api('GET', '/api/artist/submissions', null, { 'x-artist-key': key }));
-    } catch (e) {
-      storage.del('artistKey');
-      toast(e.message, true);
-      return viewArtist();
-    }
     const h = { 'x-artist-key': key };
-    const placed = subs.filter((s) => ['accepted', 'scheduled', 'published'].includes(s.status)).length;
-    const decided = subs.filter((s) => ['accepted', 'scheduled', 'published', 'rejected'].includes(s.status)).length;
-    const due = subs.reduce((a, s) => a + s.settlement.duePLN, 0);
-    const revenue = subs.reduce((a, s) => a + s.settlement.revenuePLN, 0);
+    let me = null;
+    try {
+      me = await api('GET', '/api/artist/me', null, h);
+    } catch (e) {
+      if (!storage.get('newArtist')) { storage.del('artistKey'); toast(e.message, true); return viewArtist(); }
+    }
+    const [subs, camps] = await Promise.all([
+      api('GET', '/api/artist/submissions', null, h).then((r) => r.submissions).catch(() => []),
+      api('GET', '/api/artist/campaigns', null, h).then((r) => r.campaigns).catch(() => []),
+    ]);
+    const profile = me && me.profile;
     const thisMonth = new Date().toISOString().slice(0, 7);
+    const due = subs.reduce((a, s) => a + s.settlement.duePLN, 0);
     app.innerHTML = `
-      <div class="sub-head"><h1>Panel artysty</h1><button class="btn small ghost" id="logout">Wyloguj</button></div>
-      <div class="stats">
-        <div class="stat"><b>${subs.length}</b><span>zgłoszeń</span></div>
-        <div class="stat"><b>${placed}</b><span>umieszczeń</span></div>
-        <div class="stat"><b>${decided ? Math.round((placed / decided) * 100) : 0}%</b><span>skuteczność</span></div>
-        <div class="stat"><b>${pln(revenue)}</b><span>zgłoszone przychody</span></div>
-        <div class="stat"><b>${pln(due)}</b><span>prowizje do zapłaty</span></div>
-      </div>
-      <details><summary>Pokaż mój klucz artysty</summary><p><span class="key">${esc(key)}</span></p></details><br>
+      <div class="sub-head"><h1>${esc(profile ? profile.name : 'Panel artysty')}</h1>
+        <span>${profile ? `<a class="btn small" href="#/artysta/${esc(profile.slug)}">Mój press kit ↗</a>` : ''} <button class="btn small ghost" id="logout">Wyloguj</button></span></div>
+      ${storage.get('newArtist') && !profile ? `<div class="notice warn"><b>Zapisz swój klucz artysty</b> – to jedyny dostęp do panelu:<br><br><span class="key">${esc(key)}</span></div>` : ''}
+      ${me ? careerView(me.career) : ''}
+      <details ${profile ? '' : 'open'}><summary><b>${profile ? 'Edytuj profil i press kit' : 'Krok 1: uzupełnij profil i press kit'}</b></summary><div class="panel">${profileForm(profile || storage.get('artistProfile', {}) && { name: storage.get('artistProfile', {}).artistName })}</div></details>
+      <h2>Kampanie</h2>
+      ${camps.length ? '' : '<div class="empty">Brak kampanii. <a href="#/kampania">Uruchom pierwszą</a> – budżet 0 zł wystarczy.</div>'}
+      ${camps.map((c) => `
+        <div class="panel" data-campaign="${esc(c.id)}">
+          <div class="sub-head"><h3>🎼 ${esc(c.trackTitle)} <span class="muted small">premiera ${esc(c.releaseDate)}</span></h3>
+            <span><span class="level">Siła orkiestry: ${c.orchestraScore}/100</span> <button class="btn small" data-ics="${esc(c.id)}">📅 .ics</button></span></div>
+          <p class="muted small">Wysłano ${c.results.sent} zgłoszeń · umieszczenia: ${c.results.placed.length} · zasięg umieszczeń: ${num(c.results.reachPlaced)}</p>
+          <details><summary>Harmonogram i zadania</summary>${planView(c, { forCampaign: c, key })}</details>
+        </div>`).join('')}
+      <h2>Zgłoszenia ${due ? `<span class="muted small">· prowizje do zapłaty: ${pln(due)}</span>` : ''}</h2>
+      ${subs.length ? '' : '<p class="muted">Brak zgłoszeń.</p>'}
       ${subs.map((s) => `
         <div class="sub">
           <div class="sub-head">
-            <div><b>${esc(s.trackTitle)}</b> → <a href="#/miejsce/${esc(s.outletId)}">${esc(s.outletName)}</a> <span class="muted small">· ${date(s.createdAt)}</span></div>
+            <div><b>${esc(s.trackTitle)}</b> → <a href="#/miejsce/${esc(s.outletId)}">${esc(s.outletName)}</a> <span class="muted small">· ${date(s.createdAt)}${s.campaignId ? ' · kampania' : ''}</span></div>
             ${statusBadge(s.status)}
           </div>
           <p class="small">${modelBadge(s.agreement)} ${s.reviewFee ? `<span class="muted">opłata za odsłuch: ${pln(s.reviewFee.amountPLN)}</span>` : ''}</p>
@@ -415,19 +659,46 @@
             ${revenueTable(s)}
             <form class="inline-form" data-rev="${esc(s.id)}">
               <div class="field"><label>Miesiąc</label><input name="period" type="month" required value="${thisMonth}"></div>
-              <div class="field"><label>Przychód z utworu (zł)</label><input name="amountPLN" type="number" min="0" step="0.01" required></div>
+              <div class="field"><label>Łączny przychód utworu (zł)</label><input name="amountPLN" type="number" min="0" step="0.01" required></div>
               <div class="field"><label>Uwagi</label><input name="note" maxlength="500" placeholder="np. Spotify + YouTube"></div>
               <button class="btn" type="submit">Zgłoś przychód</button>
             </form>` : ''}
         </div>`).join('')}`;
-    document.getElementById('logout').addEventListener('click', () => { storage.del('artistKey'); viewArtist(); });
+
+    document.getElementById('logout').addEventListener('click', () => { storage.del('artistKey'); storage.del('newArtist'); viewArtist(); });
+    const pf = document.getElementById('pf');
+    onSubmit(pf, async (d) => {
+      const links = {};
+      for (const k of ['spotify', 'youtube', 'instagram', 'tiktok', 'soundcloud', 'website']) links[k] = d[`link_${k}`] || '';
+      const body = {
+        name: d.name, contactEmail: d.contactEmail, country: d.country, city: d.city, photoUrl: d.photoUrl,
+        monthlyListeners: d.monthlyListeners || 0, bio: d.bio, bioEn: d.bioEn, achievements: d.achievements, links,
+        genres: [...pf.querySelector('[name=genres]').selectedOptions].map((x) => x.value),
+      };
+      await api('PUT', '/api/artist/profile', body, h);
+      storage.del('newArtist');
+      toast('Profil zapisany.');
+      viewArtist();
+    });
+    app.querySelectorAll('[data-ics]').forEach((b) => b.addEventListener('click', () => downloadIcs(camps.find((c) => c.id === b.dataset.ics))));
+    app.querySelectorAll('[data-campaign]').forEach((el) => {
+      const cid = el.dataset.campaign;
+      el.querySelectorAll('[data-task]').forEach((cb) => cb.addEventListener('change', async () => {
+        try { await api('PATCH', `/api/campaigns/${cid}/tasks/${cb.dataset.task}`, { done: cb.checked }, h); toast('Zapisano – siła orkiestry rośnie.'); } catch (e) { toast(e.message, true); }
+      }));
+      el.querySelectorAll('[data-send]').forEach((b) => b.addEventListener('click', async () => {
+        try { await api('POST', `/api/campaigns/${cid}/waves/${b.dataset.send}/send`, null, h); toast('Fala wysłana.'); viewArtist(); } catch (e) { toast(e.message, true); }
+      }));
+    });
     app.querySelectorAll('[data-withdraw]').forEach((b) => b.addEventListener('click', async () => {
       if (!confirm('Wycofać zgłoszenie?')) return;
       try { await api('PATCH', `/api/submissions/${b.dataset.withdraw}`, { status: 'withdrawn' }, h); viewArtist(); } catch (e) { toast(e.message, true); }
     }));
     app.querySelectorAll('form[data-rev]').forEach((f) => onSubmit(f, async (d) => {
       const r = await api('POST', `/api/submissions/${f.dataset.rev}/revenue`, d, h);
-      toast(r.entry.inAgreement ? `Prowizja do zapłaty: ${pln(r.entry.commissionPLN)}` : 'Okres poza umową – bez prowizji.');
+      toast(r.pool.size > 1
+        ? `Pula Efektu: ${r.pool.size} kuratorów, łącznie ${pln(r.pool.totalCommissionPLN)}${r.pool.factor < 1 ? ` (limit ${r.pool.capPercent}% chroni Twój przychód)` : ''}.`
+        : (r.entry.inAgreement ? `Prowizja do zapłaty: ${pln(r.entry.commissionPLN)}` : 'Okres poza umową – bez prowizji.'));
       viewArtist();
     }));
   }
@@ -447,6 +718,9 @@
         <div class="field"><label>Zasięg (obserwujący / słuchacze)</label><input name="reach" type="number" min="0" value="${esc(o.reach ?? '')}"></div>
         <div class="field"><label>Termin odpowiedzi (dni)</label><input name="responseDays" type="number" min="1" max="90" value="${esc(o.responseDays ?? 7)}"></div>
       </div>
+      <div class="field"><label>Minimalny poziom artysty (Drabina dostępu)</label>
+        <select name="minLevel">${options({ 1: '1 – Debiutant (wszyscy)', 2: '2 – Lokalny', 3: '3 – Krajowy', 4: '4 – Międzynarodowy', 5: '5 – Globalny' }, String(o.minLevel || 1))}</select>
+        <div class="hint">Duże miejsca mogą przyjmować tylko artystów z udokumentowanymi wynikami – mniej przypadkowych zgłoszeń, a artyści mają cel, do którego dążą.</div></div>
       <div class="row">
         <div class="field"><label>Kraj</label><input name="country" maxlength="60" value="${esc(o.country)}"></div>
         <div class="field"><label>Język</label><input name="language" maxlength="60" value="${esc(o.language)}"></div>
@@ -486,7 +760,7 @@
     const d = formData(form);
     return {
       name: d.name, type: d.type, url: d.url, contactEmail: d.contactEmail,
-      reach: d.reach || 0, responseDays: d.responseDays || 7, country: d.country, language: d.language,
+      reach: d.reach || 0, responseDays: d.responseDays || 7, country: d.country, language: d.language, minLevel: d.minLevel || 1,
       description: d.description,
       genres: [...form.querySelector('[name=genres]').selectedOptions].map((x) => x.value),
       collaboration: { model: d.model, ratePercent: d.ratePercent, durationMonths: d.durationMonths, feePLN: d.feePLN, terms: d.terms },
@@ -565,7 +839,7 @@
         return `
         <div class="sub">
           <div class="sub-head">
-            <div><b>${esc(s.artistName)} – ${esc(s.trackTitle)}</b> <span class="muted small">${esc(s.genre)} · ${date(s.createdAt)}</span></div>
+            <div><b>${esc(s.artistName)} – ${esc(s.trackTitle)}</b> <span class="muted small">${esc(s.genre)} · ${date(s.createdAt)}</span>${s.artistSlug ? ` <a class="tag" href="#/artysta/${esc(s.artistSlug)}">press kit · ${esc(s.artistLevel)}</a>` : ''}</div>
             ${statusBadge(s.status)}
           </div>
           <p><a href="${esc(s.trackUrl)}" target="_blank" rel="noopener noreferrer nofollow">▶ Odsłuchaj</a> · <a href="mailto:${esc(s.artistEmail)}">${esc(s.artistEmail)}</a>${s.releaseDate ? ` · premiera ${esc(s.releaseDate)}` : ''}</p>
@@ -652,6 +926,9 @@
     [/^#\/miejsce\/([\w-]+)$/, viewOutlet],
     [/^#\/wyslij$/, viewSubmit],
     [/^#\/artysta$/, viewArtist],
+    [/^#\/artysta\/([\w-]+)$/, viewEpk],
+    [/^#\/kampania$/, viewCampaign],
+    [/^#\/kanaly$/, viewChannels],
     [/^#\/kurator$/, viewCurator],
     [/^#\/admin$/, viewAdmin],
   ];
