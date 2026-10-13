@@ -15,7 +15,7 @@ Pierwsza fala zapytań o współpracę do podmiotów ze Światowej Bazy (`lib/en
 | Wydarzenie zakończone | 2 |
 | Brak adresu (ukryty na stronie, domena niedostępna dla wyszukiwarki) | 71 |
 
-Pełna lista ze źródłami: [`database/outreach-contacts.csv`](../database/outreach-contacts.csv) (kolumny `email`, `status`, `source` – strona, na której adres jest opublikowany, `note`).
+Pełna lista ze źródłami: [`database/outreach-contacts.csv`](../database/outreach-contacts.csv) (kolumny `email`, `status`, `source` – strona, na której adres jest opublikowany, `note`). Kolumna `confidence`: `high` (248) albo `check` (28) – adres ze starszej strony albo skrzynka ogólna/support/reklama; warto rzucić okiem przed wysyłką.
 
 Pominięte w tej fali (147): platformy dystrybucyjne, organizacje zbiorowego zarządzania, granty/biura eksportowe, platformy e-book/audio – potrzebują innej oferty (integracja/partnerstwo technologiczne), nie zapytania kuratorskiego.
 
