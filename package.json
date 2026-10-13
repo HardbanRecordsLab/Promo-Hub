@@ -1,0 +1,15 @@
+{
+  "name": "promo-hub",
+  "version": "0.1.0",
+  "description": "Promo Hub – miejsce, w którym artyści znajdują playlisty, radia, kanały i kuratorów, a współpraca rozliczana jest prowizyjnie.",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/*.test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "UNLICENSED"
+}

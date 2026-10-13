@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Promo Hub</title>
+  <meta name="description" content="Playlisty, radia, kanały, blogi i DJ-e w jednym miejscu. Promocja muzyki na zasadach prowizji – płacisz za efekt.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23ff4d6d'/%3E%3Cpath d='M12 22V9l11-2v13' stroke='white' stroke-width='2.5' fill='none'/%3E%3Ccircle cx='9.5' cy='22' r='3' fill='white'/%3E%3Ccircle cx='20.5' cy='20' r='3' fill='white'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a href="#/" class="brand"><span class="logo">♪</span> Promo Hub</a>
+    <button class="menu-btn" id="menuBtn" aria-label="Menu" aria-expanded="false">☰</button>
+    <nav id="nav">
+      <a href="#/katalog">Katalog</a>
+      <a href="#/dopasuj">Dopasuj</a>
+      <a href="#/wyslij">Wyślij utwór <span class="badge" id="cartCount" hidden>0</span></a>
+      <a href="#/artysta">Panel artysty</a>
+      <a href="#/kurator">Dla kuratorów</a>
+    </nav>
+  </header>
+  <main id="app" tabindex="-1"></main>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <footer class="footer">
+    <p>Promo Hub · promocja muzyki oparta na współpracy · <a href="#/admin">admin</a></p>
+    <p class="muted small">Płatne gwarantowane miejsca na playlistach łamią regulaminy platform streamingowych. W Promo Hub płacisz prowizją od efektu albo za odsłuch, nigdy za samo umieszczenie.</p>
+  </footer>
+  <script src="/app.js"></script>
+</body>
+</html>
