@@ -65,7 +65,7 @@ Wydawnictwo Czarne,PL,publisher,writer,https://czarne.com.pl,propozycje@czarne.c
 Wydawnictwo Literackie,PL,publisher,writer,https://www.wydawnictwoliterackie.pl,sekretariat@wydawnictwoliterackie.pl,high,found,https://www.wydawnictwoliterackie.pl/produkt/5581/trzecie-krolestwo,general secretariat; manuscripts only via form,pl
 Wydawnictwo Marginesy,PL,publisher,writer,https://marginesy.com.pl,pocztaliteracka@marginesy.com.pl,high,found,https://marginesy.com.pl/page/wydaj-u-nas-ksiazke,book proposals; written with (at) on site,pl
 Wydawnictwo Muza,PL,publisher,writer,https://muza.com.pl,propozycjewydawnicze@muza.com.pl,high,found,https://muza.com.pl/pl/terms/wydaj-u-nas-34.html,manuscript submissions; media: promocja@muza.com.pl,pl
-Wydawnictwo Otwarte,PL,publisher,writer,https://www.otwarte.eu,,,form,https://www.otwarte.eu/contact/author-appearance,author proposal form; site emails masked,pl
+Wydawnictwo Otwarte,PL,publisher,writer,https://www.otwarte.eu,,,form,https://www.otwarte.eu/contact/author-appearance,General contact page; marketing-dept email masked in results,pl
 Wydawnictwo Poznańskie,PL,publisher,writer,https://wydawnictwopoznanskie.pl,propozycje@wydawnictwopoznanskie.pl,high,found,https://wydawnictwopoznanskie.pl/wydaj-u-nas-ksiazke/,manuscript submissions,pl
 Wydawnictwo Sonia Draga,PL,publisher,writer,https://soniadraga.pl,propozycje@soniadraga.pl,high,found,https://soniadraga.pl/kontakt,author proposals; redakcja@soniadraga.pl also listed,pl
 Wydawnictwo SQN,PL,publisher,writer,https://wsqn.pl,propozycje@wsqn.pl,high,found,https://www.wsqn.pl/wydaj-u-nas-ksiazke/,manuscript proposals,pl
@@ -88,18 +88,18 @@ BBC Music Introducing,GB,radio,music|dj,https://www.bbc.co.uk/introducing,,,not_
 Cashmere Radio,DE,webradio,music|dj,https://cashmereradio.com,music@cashmereradio.com,high,found,https://cashmereradio.com/about/,music submissions and collaboration proposals,en
 Data Transmission,GB,press,dj,https://datatransmission.co,hello@datatransmission.co,high,found,https://datatransmission.co/contact/,general; other addresses are personal editors,en
 dublab,US,webradio,music|dj,https://www.dublab.com,,,review,https://shop.dublab.com/,only a donations/shop inbox,en
-Earmilk,US,blog,music|dj,https://earmilk.com,,,form,https://earmilk.com/submit-music/,SubmitHub/Pillargram only; partnerships via personal address,en
+Earmilk,US,blog,music|dj,https://earmilk.com,david@earmilk.com,check,found,https://earmilk.com/submit-music/,"named person, published for partnerships – check",en
 Electronic Groove,US,press,dj,https://electronicgroove.com,contact@electronicgroove.com,high,found,https://electronicgroove.com/terms-conditions/,general; submissions via paid forms,en
 FBi Radio,AU,radio,music|dj,https://www.fbiradio.com,music@fbiradio.com,high,found,https://www.fbiradio.com/contact-us/,music submissions; airplay: newmusic@fbiradio.com,en
 FOCUS Wales,GB,festival,music|dj,https://focuswales.com,info@focuswales.com,high,found,https://focuswales.com/venues/,"general/proposals; also press@, sponsors@focuswales.com",en
 Folk Radio UK,GB,press,music,https://www.folkradio.co.uk,submissions@klofmag.com,high,found,https://www.folkradio.co.uk/submissions/,rebranded as KLOF Mag; submissions inbox,en
 Foundation FM,GB,webradio,music|dj,https://foundation.fm,hello@foundation.fm,high,found,https://foundation.fm/info,press/media; partnerships contact is personal,en
-Indie Shuffle,US,blog,music,https://www.indieshuffle.com,,,form,https://www.indieshuffle.com/news/why-submithub-sucks/,submissions via SubmitHub; no role email,en
+Indie Shuffle,US,blog,music,https://www.indieshuffle.com,,,form,https://www.indieshuffle.com/news/why-submithub-sucks/,"No form/role email; general contact block, email obfuscated",en
 Indiemono,ES,playlist,music,https://indiemono.com,info@indiemono.com,high,found,https://indiemono.com/terms-and-conditions/,general; music only via submit forms,en
 KALX (UC Berkeley),US,college,music|dj,https://kalx.berkeley.edu,music@kalx.berkeley.edu,high,found,https://kalx.berkeley.edu/about/contact/,music directors; physical releases only,en
 KDVS (UC Davis),US,college,music|dj,https://kdvs.org,musicdept@kdvs.org,high,found,https://kdvs.org/contact,music department; physical submissions only,en
 Kiosk Radio,BE,webradio,music|dj,https://kioskradio.com,collabs@kioskradio.com,high,found,https://www.kioskradio.com/about,events/partnerships; promos: promo@kioskradio.com,en
-KZSU (Stanford),US,college,music|dj,https://kzsu.stanford.edu,music@kzsu.stanford.edu,high,found,https://kzsu.stanford.edu/contact/,music directors; check submission guidelines,en
+KZSU (Stanford),US,college,music|dj,https://kzsu.stanford.edu,music@kzsu.stanford.edu,check,found,https://kzsu.stanford.edu/contact/,music directors; check submission guidelines,en
 Le Mellotron,FR,webradio,music|dj,https://www.lemellotron.com,hola@lemellotron.com,high,found,https://www.lemellotron.com/the-dizzy-sessions/,general contact; only address found,en
 Liverpool Sound City,GB,festival,music|dj,https://www.soundcity.uk.com,partnerships@soundcity.uk.com,high,found,https://www.soundcity.uk.com/contact,partnerships; general: hello@soundcity.uk.com,en
 London Jazz News,GB,press,music,https://londonjazznews.com,,,personal_only,https://londonjazznews.com/the-londonjazz-news-team-contact-details/,only editor's personal address; now UK Jazz News,en
@@ -120,7 +120,7 @@ Sofar Sounds,WW,club,music,https://www.sofarsounds.com,info@sofarsounds.com,high
 Soho Radio,GB,webradio,music|dj,https://sohoradiolondon.com,music@sohoradiolondon.com,high,found,https://sohoradiolondon.com/new-site-under-construction/contact/,music submissions,en
 Soundplate,GB,playlist,music|dj,https://soundplate.com,info@soundplate.com,high,found,https://soundplate.com/edit/,general; submissions via play.soundplate.com,en
 Tilos Rádió,HU,webradio,music|dj,https://tilos.hu,zene@tilos.hu,high,found,https://tilos.hu/page/elerhetoseg,music recommendations and mixes,en
-triple j Unearthed,AU,radio,music|dj,https://www.abc.net.au/triplejunearthed,,,form,https://www.abc.net.au/triplej/programs/program-unearthed/contact-us,contact form only; uploads via Unearthed,en
+triple j Unearthed,AU,radio,music|dj,https://www.abc.net.au/triplejunearthed,,,form,https://www.abc.net.au/triplej/programs/program-unearthed/contact-us,No role email; only personal publicist address found,en
 Triple R (RRR),AU,radio,music,https://www.rrr.org.au,music@rrr.org.au,high,found,https://www.rrr.org.au/get-involved/submit-music,music submissions,en
 Uppbeat,GB,sync,music|dj,https://uppbeat.io,media@uppbeat.io,check,found,https://uppbeat.io/press,press/media; support@uppbeat.io general,en
 WMBR (MIT),US,college,music|dj,https://wmbr.org,newedge@wmbr.org,high,found,https://wmbr.org/newedge/,New Edge show; music dept address hidden,en
@@ -154,7 +154,7 @@ CKUA,CA,radio,music,https://ckua.com,feedback@ckua.com,high,found,https://ckua.c
 Clarkesworld,US,magazine,writer,https://clarkesworldmagazine.com,nonfiction@clarkesworldmagazine.com,high,found,https://clarkesworldmagazine.com/submissions/,Nonfiction queries; other addresses personal,en
 Clash,GB,press,music|dj,https://www.clashmusic.com,,,not_found,https://www.clashmusic.com/contact-clash/,Two searches; addresses masked in results,en
 Club Killers,US,dj,music|dj,https://www.clubkillers.com,,,not_found,https://clubkillers.com/pages/contact,Contact page address not visible,en
-Couleur3 (RTS),CH,radio,music|dj,https://www.rts.ch/couleur3,,,form,http://www.rts.ch/corporate/contact/?contact=couleur3,RTS contact form; medias@rts.ch journalists only,en
+Couleur3 (RTS),CH,radio,music|dj,https://www.rts.ch/couleur3,,,form,http://www.rts.ch/corporate/contact/?contact=couleur3,Also RTS partnerships page: https://www.rts.ch/entreprise/espace-pro/8970950-la-rts-partout-avec-vous.html,en
 CrimeFest,GB,festival,writer,https://crimefest.com,,,inactive,https://www.crimefest.com/contact/,festival ended in May 2025,en
 Crooklyn Clan,US,dj,music|dj,https://www.crooklynclan.net,store@crooklynclan.net,check,found,https://www.crooklynclan.net/terms-of-service,Store/general inbox from Terms page,en
 Digital DJ Pool,US,dj,music|dj,https://digitaldjpool.com,support@digitaldjpool.com,check,found,https://digitaldjpool.com/contact/,general support,en
@@ -176,7 +176,7 @@ Glastonbury Festival,GB,festival,music,https://www.glastonburyfestivals.co.uk,pr
 Gorilla vs. Bear,US,blog,music,https://www.gorillavsbear.net,,,personal_only,https://www.gorillavsbear.net/about/,Submissions go to founder's named address,en
 HÖR Berlin,DE,mixseries,dj,https://hoer.live,,,review,https://hoer.live/maximum-heat-terms-conditions/,only a data-access request inbox,en
 HotNewHipHop,US,press,music,https://www.hotnewhiphop.com,musicsubmissions@hotnewhiphop.com,high,found,https://origin.hotnewhiphop.com/submit-your-music/,Music submissions; staff@ for editorial,en
-Hype Machine,US,blog,music|dj,https://hypem.com,,,form,https://hypem.com/about,Contact form only; old staff address,en
+Hype Machine,US,blog,music|dj,https://hypem.com,,,form,https://hypem.com/about,Only support/legal-notices inbox; contact form preferred,en
 Ibero 90.9,MX,college,music,https://www.ibero909.fm,comunicacion@ibero909.fm,high,found,https://ibero909.fm/nosotros/contacto/,Communications inbox on contact page,en
 Indie Rocks!,MX,press,music,https://www.indierocks.mx,editorial@indierocks.mx,high,found,https://www.indierocks.mx/contacto/,Editorial; music submissions inbox,en
 Indie88,CA,radio,music,https://indie88.com,questions@indie88.com,high,found,https://www.indie88.com/contact/,General inbox; MD has named address,en
@@ -184,12 +184,12 @@ Jazzwise,GB,press,music,https://www.jazzwise.com,,,review,https://www.jazzwise.c
 Jenesaispop,ES,press,music,https://jenesaispop.com,info@jenesaispop.com,high,found,https://jenesaispop.com/,General contact inbox,en
 KINK,NL,radio,music,https://kink.nl,plug@kink.nl,high,found,https://kink.nl/contact,Music inbox; info@kink.nl general,en
 KUTX,US,radio,music,https://kutx.org,music@kutx.org,high,found,https://kutx.org/submit-your-music/,Music submissions to music director,en
-Late Night Record Pool,US,dj,music|dj,https://www.latenightrecordpool.com,,,form,https://www.latenightrecordpool.com/,Contact Us form only; no email,en
+Late Night Record Pool,US,dj,music|dj,https://www.latenightrecordpool.com,,,form,https://www.latenightrecordpool.com/,Search found nothing; keep site Contact Us form,en
 laut.de,DE,press,music,https://www.laut.de,promo@laut.de,high,found,https://laut.de/_/Impressum,Promo/Bemusterung inbox in Impressum,en
 Leipziger Buchmesse,DE,festival,writer,https://www.leipziger-buchmesse.de,info@leipziger-messe.de,high,found,https://www.leipziger-buchmesse.de/en/imprint,Parent Leipziger Messe general inbox,en
 Lightspeed,US,magazine,writer,https://www.lightspeedmagazine.com,reviewbooks@lightspeedmagazine.com,high,found,https://www.lightspeedmagazine.com/contact-us/,Review copies inbox; manuscripts via Moksha,en
-Linecheck,IT,festival,music|dj,https://www.linecheck.it,,,form,https://www.linecheck.it/contact/,Contact form only; no email shown,en
-Litro,GB,magazine,writer,https://www.litro.co.uk,,,form,https://www.litro.co.uk/submit/,Emails obfuscated; submissions via Submittable,en
+Linecheck,IT,festival,music|dj,https://www.linecheck.it,,,form,https://www.linecheck.it/contact/,No email; parent MIH has musicinnovationhub.org/contacts form,en
+Litro,GB,magazine,writer,https://www.litro.co.uk,,,form,https://www.litro.co.uk/submit/,Emails obfuscated; use 'Partner with Litro' link on About,en
 Lofi Girl,FR,youtube,music|dj,https://lofigirl.com,contact@lofigirl.com,check,found,https://www.lofigirl.com/privacy,"General inbox, listed in privacy policy",en
 Loud And Quiet,GB,press,music,https://www.loudandquiet.com,info@loudandquiet.com,high,found,https://www.loudandquiet.com/contact/,General; contribute@ for writers/photographers,en
 LRT (Lithuanian Radio and Television),LT,radio,music|dj,https://www.lrt.lt,lrt@lrt.lt,high,found,https://apie.lrt.lt/en/contacts,General LRT inbox; no music-specific,en
@@ -212,17 +212,17 @@ Raadio 2 (ERR),EE,radio,music|dj,https://r2.err.ee,muusika@err.ee,high,found,htt
 Radio 1 (Prague),CZ,radio,music|dj,https://www.radio1.cz,inclubator@radio1.cz,high,found,https://www.radio1.cz/porad/inclubator/,demo submissions (Inclubator show),en
 Rádio FM (RTVS),SK,radio,music|dj,https://fm.rtvs.sk,demovnica@radiofm.sk,check,found,https://fm.rtvs.sk/rubriky/hudba_fm/2360/demovnica.-hladame-novu-slovensku-hudbu,"demo inbox; 2013 page, may be outdated",en
 Radio Meuh,FR,webradio,music|dj,https://www.radiomeuh.com,contact@radiomeuh.com,check,found,https://www.radiomeuh.com/live-in-the-mix,"general contact; old page, form preferred",en
-Radio Paradise,US,webradio,music,https://radioparadise.com,,,form,https://legacy.radioparadise.com/rp3.php?n=Submissions,"submissions via online system, no email",en
+Radio Paradise,US,webradio,music,https://radioparadise.com,,,form,https://legacy.radioparadise.com/rp3.php?n=Submissions,No form; business only via a named staff address; no sponsors,en
 Radio Popolare,IT,radio,music,https://www.radiopopolare.it,radiopop@radiopopolare.it,high,found,https://www.radiopopolare.it/?page_id=616188,general office; music show inbox also exists,en
 Radio SRF Virus,CH,radio,music|dj,https://www.srf.ch/radio-srf-virus,musik@srfvirus.ch,high,found,https://www.srf.ch/radio-srf-virus/ueber-uns/ueber-uns-so-erreichst-du-uns,"music submissions, streaming links only",en
 Radio Wave (Český rozhlas),CZ,radio,music|dj,https://wave.rozhlas.cz,radiowave@rozhlas.cz,high,found,https://wave.rozhlas.cz/kontakty-5982989,general editorial,en
-Rás 2 (RÚV),IS,radio,music,https://www.ruv.is,,,form,https://www.ruv.is/ras2,songs via RUV archive web form,en
+Rás 2 (RÚV),IS,radio,music,https://www.ruv.is,,,form,https://www.ruv.is/ras2,Generic Netfang on Rás 2 page; purpose unspecified,en
 Reactor 105.7 (IMER),MX,radio,music,https://reactor.imer.mx,,,not_found,https://reactor.imer.mx,no indexed results on domain,en
 Reeperbahn Festival,DE,festival,music|dj,https://www.reeperbahnfestival.com,contact@reeperbahnfestival.com,high,found,https://international.reeperbahnfestival.com/en/contact,general contact; artists use submission form,en
 Remezcla,US,press,music,https://remezcla.com,editorial@remezcla.com,high,found,https://remezcla.com/contact/,editorial inquiries,en
 Resident Advisor,GB,press,dj,https://ra.co,,,not_found,https://ra.co/about/contribute,addresses obfuscated in results; see contribute page,en
 Rolling Stone India,IN,press,music,https://rollingstoneindia.com,editor@rollingstone-india.com,high,found,https://rollingstoneindia.com/contact/,editorial queries,en
-Saving Country Music,US,press,music,https://www.savingcountrymusic.com,,,form,https://savingcountrymusic.com/contact/,Contact Forum; email given on request,en
+Saving Country Music,US,press,music,https://www.savingcountrymusic.com,,,form,https://savingcountrymusic.com/contact/,Contact Forum; email only given after form,en
 Scene Noise,AE,press,music|dj,https://scenenoise.com,,,not_found,https://scenenoise.com,no address found; second search not run,en
 Sharpe,SK,festival,music|dj,https://www.sharpe.sk,info@sharpe.sk,high,found,https://sharpe.sk/info/about/,general info,en
 SomaFM,US,webradio,music|dj,https://somafm.com,promosubmissions@somafm.com,high,found,https://somafm.com/contact/submitmusic.html,music submissions (main channels),en
@@ -241,20 +241,20 @@ Trax Magazine,FR,press,dj,https://www.traxmag.com,partenariats@traxmag.com,check
 Tsugi,FR,press,dj,https://www.tsugi.fr,contact@tsugi.fr,high,found,https://www.tsugi.fr/contact/,General contact address,en
 Uncanny Magazine,US,magazine,writer,https://www.uncannymagazine.com,,,not_found,https://www.uncannymagazine.com/about/,Only uncannymagazine@gmail.com listed (gmail domain),en
 Under the Radar,US,press,music,https://www.undertheradarmag.com,,,not_found,https://www.undertheradarmag.com/contact/,Emails obfuscated/JS-hidden on contact page,en
-Waves Vienna,AT,festival,music|dj,https://www.wavesvienna.com,,,form,https://www.wavesvienna.com/contact,Contact form only; no email found,en
+Waves Vienna,AT,festival,music|dj,https://www.wavesvienna.com,,,form,https://www.wavesvienna.com/contact,General contact form; no email in Impressum/press results,en
 WFMU,US,radio,music,https://wfmu.org,,,not_found,https://wfmu.org/about/,No email published; postal music submissions,en
 Words Without Borders,US,magazine,writer,https://wordswithoutborders.org,info@wordswithoutborders.org,high,found,https://wordswithoutborders.org/contact/,General inquiries; submissions@ closed since Aug 2026,en
 Worldcon,WW,festival,writer,https://www.worldcon.org,,,review,https://www.worldcon.org/contact/,WSFS mark committee; each Worldcon independent,en
 Worldwide FM,GB,webradio,music|dj,https://worldwidefm.net,info@worldwidefm.net,high,found,https://www.worldwidefm.net/contact,"Covers submissions, partnerships and press",en
-ZipDJ,US,dj,music|dj,https://www.zipdj.com,,,form,https://www.zipdj.com/music-submission,Submissions via web form; no email found,en
+ZipDJ,US,dj,music|dj,https://www.zipdj.com,,,form,https://www.zipdj.com/music-submission,General contact page beats music-submission form; email obfuscated,en
 1LIVE (WDR),DE,radio,music|dj,https://www1.wdr.de/radio/1live,,,not_found,https://www1.wdr.de/radio/1live,Two domain searches returned no results,en
 5FM (SABC),ZA,radio,music|dj,https://www.5fm.co.za,,,review,http://www.5fm.co.za/sabc/home/5fm/noticeboard/details?id=3656ec8a-9a03-48ee-96cb-d9d93842f209,2015 page; submissions portal now,en
 Afropunk,US,festival,music,https://afropunk.com,pr@afropunk.com,high,found,https://afropunk.com/festival/blktopia/media-center/,Press/media; sponsorship contact is personal,en
 AGNI,US,magazine,writer,https://agnionline.bu.edu,agni@bu.edu,high,found,https://agnionline.bu.edu/contact/,Parent BU domain; submissions via Subfolio only,en
 Aké Arts and Book Festival,NG,festival,writer,https://akefestival.org,comms@bookbuzzfoundation.org,high,found,https://akefestival.org/press/,Organiser Book Buzz Foundation; press contact,en
 Amsterdam Dance Event,NL,festival,dj,https://www.amsterdam-dance-event.nl,info@amsterdam-dance-event.nl,high,found,https://www.amsterdam-dance-event.nl/contact/,General contact; no partnerships address,en
-Anjunabeats,GB,label,dj,https://www.anjunabeats.com,,,form,https://anjunabeats.com/about,Demo Submissions button; email redacted in results,en
-APM Music,US,sync,music|dj,https://www.apmmusic.com,,,form,https://form.apmmusic.com/composer-submission/,Composer form; support@apmmusic.com is support desk,en
+Anjunabeats,GB,label,dj,https://www.anjunabeats.com,contact@anjunabeats.com,check,found,https://music.anjunabeats.com/about,general label inbox (official store about page),en
+APM Music,US,sync,music|dj,https://www.apmmusic.com,info@apmmusic.com,high,found,https://classic.apmmusic.com/,head office general inbox,en
 Armada Music,NL,label,dj,https://www.armadamusic.com,info@armadamusic.com,high,found,https://news.armadamusic.com/contact/,general info; demos via LabelRadar,en
 BBC Asian Network,GB,radio,music|dj,https://www.bbc.co.uk/asiannetwork,,,not_found,https://www.bbc.co.uk/asiannetwork,bbc.co.uk not searchable by tool,en
 Bologna Children's Book Fair,IT,festival,writer,https://www.bolognachildrensbookfair.com,bookfair@bolognafiere.it,high,found,https://www.bolognachildrensbookfair.com/media//libro/2026/2026_BCBF_Preview.pdf,fair office at organizer BolognaFiere,en
@@ -272,7 +272,7 @@ Defected Records,GB,label,dj,https://defected.com,press@defected.com,high,found,
 Deutschlandfunk Nova,DE,radio,music|dj,https://www.deutschlandfunknova.de,,,not_found,https://www.deutschlandfunknova.de,domain not searchable by tool,en
 Dim Mak,US,label,dj,https://dimmak.com,,,not_found,https://www.dimmak.com/demos,demo page exists; no address shown,en
 DJ Mag,GB,press,dj,https://djmag.com,,,not_found,https://djmag.com/information/how-pitch-dj-mag,addresses redacted in results; pitch page,en
-Double J,AU,radio,music,https://www.abc.net.au/doublej,,,form,https://www.abc.net.au/listen/doublej/contact-us,contact form; music via Unearthed,en
+Double J,AU,radio,music,https://www.abc.net.au/doublej,,,form,https://www.abc.net.au/listen/doublej/contact-us,No Double J inbox; ABC media contacts journalist-only,en
 DownBeat,US,press,music,https://downbeat.com,editor@downbeat.com,high,found,https://downbeat.com/site/contact,editorial / general inquiries,en
 DR P6 Beat,DK,radio,music,https://www.dr.dk,P6musik@dr.dk,high,found,https://www.dr.dk/om-dr/nyheder/musikken-paa-p6-beat-hvordan-og-hvorfor,P6 music submissions,en
 Electric Literature,US,magazine,writer,https://electricliterature.com,editors@electricliterature.com,high,found,https://electricliterature.com/contact/,general inquiries; submissions via Submittable,en
@@ -290,7 +290,7 @@ Harrogate Crime Writing Festival,GB,festival,writer,https://harrogateinternation
 Hospital Records,GB,label,dj,https://www.hospitalrecords.com,info@hospitalrecords.com,check,found,https://www.hospitalrecords.com/legal/privacy-policy/,General inbox; listed in privacy policy,en
 Iceland Airwaves,IS,festival,music|dj,https://icelandairwaves.is,info@icelandairwaves.is,high,found,https://icelandairwaves.is/faq/,General contact from FAQ,en
 InterFM,JP,radio,music,https://www.interfm.co.jp,,,review,https://www.interfm.co.jp/news/single/musiclock06032021,Program listener inbox (2021); possibly stale,en
-J-WAVE,JP,radio,music,https://www.j-wave.co.jp,,,form,https://www.j-wave.co.jp/topics/2004_contact_form.htm,Contact form only; no current e-mail found,en
+J-WAVE,JP,radio,music,https://www.j-wave.co.jp,,,form,https://www.j-wave.co.jp/topics/2004_contact_form.htm,"PR inbox from 2023 release, for press; business form better",en
 jazzahead!,DE,festival,music,https://www.jazzahead.de,press@jazzahead.de,high,found,https://jazzahead.de/press/,Press office; general info@jazzahead.de also,en
 JazzTimes,US,press,music,https://jazztimes.com,,,review,https://jazztimes.com/contact/,Advertising/business inbox; editorial address masked,en
 KCRW,US,radio,music,https://www.kcrw.com,music@kcrw.org,high,found,https://help.kcrw.com/hc/en-us/articles/52458315602331-How-do-I-submit-my-music-to-KCRW,Music submissions; kcrw.org is station mail domain,en
@@ -308,7 +308,7 @@ Melbourne Writers Festival,AU,festival,writer,https://mwf.com.au,admin@mwf.com.a
 Melt Festival,DE,festival,music|dj,https://meltfestival.de,,,inactive,https://www.meltfestival.de/en/contact,festival ended in 2024,en
 Metro FM (SABC),ZA,radio,music,https://www.metrofm.co.za,music@metrofm.co.za,high,found,https://www.metrofm.co.za/metrofm/how-to-submit-music-to-metro-fm/,music submissions,en
 Mixmag,GB,press,dj,https://mixmag.net,,,not_found,https://mixmag.net/page/contact-mixmag,contact page emails obfuscated in results,en
-Monstercat,CA,label,music|dj,https://www.monstercat.com,,,form,https://www.monstercat.com/contact-us,demo forms; emails obfuscated,en
+Monstercat,CA,label,music|dj,https://www.monstercat.com,,,form,https://www.monstercat.com/contact-us,Partnerships page Contact button; all role e-mails obfuscated,en
 Mouv',FR,radio,music|dj,https://www.radiofrance.fr/mouv,,,not_found,https://www.radiofrance.fr/mouv,domain not searchable,en
 Musikexpress,DE,press,music,https://www.musikexpress.de,redaktion@musikexpress.de,high,found,https://www.musikexpress.de/impressum/,editorial,en
 MUTEK,CA,festival,dj,https://mutek.org,prog@mutek.org,high,found,https://montreal.mutek.org/en/team,programming/booking requests,en
@@ -338,13 +338,13 @@ Sveriges Radio P3,SE,radio,music|dj,https://sverigesradio.se/p3,p3musikredaktore
 SXSW,US,festival,music|dj|writer,https://www.sxsw.com,musicfest@sxsw.com,high,found,https://support.sxsw.com/hc/en-us/articles/206421755-How-do-I-submit-a-Music-Showcase-Application,SXSW Music; sponsorship: partnerships@sxsw.com,en
 Sydney Writers' Festival,AU,festival,writer,https://www.swf.org.au,,,review,https://www.swf.org.au/festival-info/booking-information,Only ticketing inbox visible; general masked,en
 Sync Summit,US,festival,music|dj,https://www.syncsummit.com,,,review,https://syncsummit.com/,Older Paris page; current contact personal,en
-The Current (MPR),US,radio,music,https://www.thecurrent.org,,,form,https://www.thecurrent.org/about,Music submissions via digital form only,en
+The Current (MPR),US,radio,music,https://www.thecurrent.org,,,form,https://www.thecurrent.org/about,mediarelations@mpr.org journalists-only; FAQ links general contact form,en
 The FADER,US,press,music,https://www.thefader.com,pr@thefader.com,high,found,https://www.thefader.com/contact,Media inquiries inbox,en
 The Kenyon Review,US,magazine,writer,https://kenyonreview.org,kenyonreview@kenyon.edu,high,found,https://kenyonreview.org/submit/,"Parent Kenyon College domain, general",en
-The Needle Drop,US,youtube,music,https://www.theneedledrop.com,,,form,https://theneedledrop.com/contact/,Music via form; business email is gmail,en
-The Sun Magazine,US,magazine,writer,https://www.thesunmagazine.org,,,form,https://www.thesunmagazine.org/contact-us,Contact form; emails masked; submissions via Submittable,en
+The Needle Drop,US,youtube,music,https://www.theneedledrop.com,therealgiggens@gmail.com,check,found,https://theneedledrop.com/contact/,official business inquiries address (gmail) – check,en
+The Sun Magazine,US,magazine,writer,https://www.thesunmagazine.org,,,form,https://www.thesunmagazine.org/contact-us,All e-mails masked in results; general contact form,en
 The White Review,GB,magazine,writer,https://www.thewhitereview.org,editors@thewhitereview.org,high,found,https://www.thewhitereview.org/contact/,Editors general inbox,en
-Toolroom Records,GB,label,dj,https://www.toolroomrecords.com,,,form,https://toolroomrecords.com/demos/,Demo upload form; listed emails personal,en
+Toolroom Records,GB,label,dj,https://www.toolroomrecords.com,,,form,https://toolroomrecords.com/demos/,Only named-staff e-mails; no general form,en
 Toronto International Festival of Authors,CA,festival,writer,https://festivalofauthors.ca,media@festivalofauthors.ca,high,found,https://festivalofauthors.ca/contact/,Media; general info@festivalofauthors.ca,en
 triple j,AU,radio,music|dj,https://www.abc.net.au/triplej,triplejunearthed@abc.net.au,high,found,https://help.abc.net.au/hc/en-us/articles/360001149455-How-long-does-it-take-before-my-tracks-and-bio-are-up-on-triple-j-Unearthed,Unearthed music inbox; general via form,en
 UKF,GB,youtube,dj,https://ukf.com,editor@ukf.com,high,found,https://ukf.com/read/want-to-write-for-ukf/,Editorial inbox; demos via web form,en
@@ -352,7 +352,7 @@ UPROXX,US,press,music,https://uproxx.com,tips@uproxx.com,high,found,https://upro
 VISIONS,DE,press,music,https://www.visions.de,redaktion@visions.de,high,found,https://www.visions.de/impressum/,Editorial; online news@visions.de,en
 WFUV,US,radio,music,https://wfuv.org,musicdept@wfuv.org,high,found,https://wfuv.org/wfuv-contact-staff,Music department; local: nyslice@wfuv.org,en
 WOMEX,DE,festival,music,https://www.womex.com,media@womex.com,high,found,https://www.womex.com/press,Press; general office womex@womex.com,en
-WXPN,US,radio,music,https://xpn.org,,,form,https://xpn.org/submit-music/,Airplay submission form; emails masked,en
+WXPN,US,radio,music,https://xpn.org,,,form,https://xpn.org/submit-music/,Business Support e-mail link hidden; sponsorship address personal,en
 XXL,US,press,music,https://www.xxlmag.com,XXL@xxlmag.com,high,found,https://www.xxlmag.com/contact/,"general, press questions",en
 YleX (Yle),FI,radio,music|dj,https://yle.fi,yleinfo@yle.fi,high,found,https://yle.fi/aihe/about-yle/contact-us,Yle general info; YleX lists personal only,en
 88rising,US,label,music,https://www.88rising.com,info@88rising.com,high,found,https://88rising.com/terms-of-service,general contact,en
@@ -383,18 +383,18 @@ MDLBEAST,SA,festival,dj,https://mdlbeast.com,care@mdlbeast.com,high,found,https:
 Movement Detroit,US,festival,dj,https://movement.us,,,not_found,https://movement.us/,No email in results; footer contact link,en
 Ninja Tune,GB,label,music|dj,https://ninjatune.net,demos@ninjatune.net,high,found,https://ninjatune.net/contact-us,Demos inbox; press@ninjatune.net also listed,en
 NME,GB,press,music,https://www.nme.com,editors@nme.com,high,found,https://www.nme.com/contact,Editorial news tips inbox,en
-NPR Tiny Desk Concerts,US,youtube,music,https://www.npr.org/series/tiny-desk-concerts,,,form,https://www.npr.org/series/1072544367/tiny-desk-contest,Tiny Desk Contest entry form only,en
+NPR Tiny Desk Concerts,US,youtube,music,https://www.npr.org/series/tiny-desk-concerts,,,review,https://www.npr.org/series/1072544367/tiny-desk-contest,only NPR media relations (press office); contest form for music,en
 Pitchfork,US,press,music,https://pitchfork.com,,,not_found,https://pitchfork.com,Domain inaccessible to search tool,en
 Primavera Sound,ES,festival,music|dj,https://www.primaverasound.com,info@primaverasound.com,high,found,https://www.primaverasound.com/es/primavera-sound-festival-terms-and-conditions,"General inbox, also customer service",en
 Pukkelpop,BE,festival,music|dj,https://www.pukkelpop.be,hello@pukkelpop.be,high,found,https://www.pukkelpop.be/en/info,General inbox in site footer,en
 Radio Deejay,IT,radio,music|dj,https://www.deejay.it,,,not_found,https://www.deejay.it,Domain inaccessible to search tool,en
-Radio X,GB,radio,music,https://www.radiox.co.uk,,,form,https://www.radiox.co.uk/contact/,Demos via contact page/presenter forms,en
+Radio X,GB,radio,music,https://www.radiox.co.uk,,,form,https://www.radiox.co.uk/contact/,radiox.co.uk/advertise routes commercial enquiries to Global form,en
 Roskilde Festival,DK,festival,music|dj,https://www.roskilde-festival.dk,press@roskilde-festival.dk,high,found,https://www.roskilde-festival.dk/en/contact,Press inbox; general info@roskilde-festival.dk,en
 SiriusXM,US,radio,music|dj,https://www.siriusxm.com,press@siriusxm.com,high,found,https://investor.siriusxm.com/company-information/contacts,Media inquiries; no music submission email,en
 Sónar,ES,festival,dj,https://sonar.es,sonar@sonar.es,check,found,https://sonar.es/es/condiciones-generales-2026,General organizer contact in terms,en
 Summer Sonic,JP,festival,music|dj,https://www.summersonic.com,,,not_found,https://www.summersonic.com/2023/info/faq/,No contact email found; phone only,en
 Sziget Festival,HU,festival,music|dj,https://szigetfestival.com,hello@szigetfestival.com,high,found,https://szigetfestival.com/wp-content/uploads/2025/07/PRIVACY-POLICY-concerning-participation-at-SZIGET-Festival_20250729.pdf,Company general contact; contact page masked,en
-The Paris Review,US,magazine,writer,https://www.theparisreview.org,,,form,https://theparisreview.org/about/submissions,Submittable or mail; emails masked,en
+The Paris Review,US,magazine,writer,https://www.theparisreview.org,,,form,https://theparisreview.org/about/submissions,Bookstore-queries inbox; ads inbox shown obfuscated 'advertising at',en
 Time Warp,DE,festival,dj,https://www.time-warp.de,wir@cosmopop.biz,high,found,https://www.time-warp.de/contact/,Organizer cosmopop GmbH general contact,en
 Ultra Records,US,label,music|dj,https://www.ultrarecords.com,,,not_found,https://www.ultrarecords.com,Search returned no results,en
 Universal Production Music,US,sync,music|dj,https://www.universalproductionmusic.com,,,not_found,https://www.universalproductionmusic.com,Domain inaccessible to search tool,en

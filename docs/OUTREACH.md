@@ -8,21 +8,21 @@ Pierwsza fala zapytań o współpracę do podmiotów ze Światowej Bazy (`lib/en
 |---|---|
 | Podmioty w bazie | 548 |
 | Objęte kampanią (radio, media, festiwale, wydawcy, wytwórnie, playlisty, sync, DJ) | 401 |
-| Znaleziony oficjalny adres → **szkic w Gmailu** | **276** (58 PL, 218 EN, 40 krajów) |
-| Tylko formularz / platforma zgłoszeń | 27 |
-| Adres wątpliwy (RODO, sklep, bilety, darowizny) – bez szkicu | 19 |
+| Znaleziony oficjalny adres → **szkic w Gmailu** | **280** (58 PL, 222 EN, 40 krajów) |
+| Tylko formularz kontaktowy → **gotowy tekst do wklejenia** ([OUTREACH-FORMS.md](OUTREACH-FORMS.md)) | 22 |
+| Adres wątpliwy (RODO, sklep, bilety, darowizny, tylko biuro prasowe) – bez szkicu | 20 |
 | Tylko adresy imienne – pominięte | 6 |
 | Wydarzenie zakończone | 2 |
 | Brak adresu (ukryty na stronie, domena niedostępna dla wyszukiwarki) | 71 |
 
-Pełna lista ze źródłami: [`database/outreach-contacts.csv`](../database/outreach-contacts.csv) (kolumny `email`, `status`, `source` – strona, na której adres jest opublikowany, `note`). Kolumna `confidence`: `high` (248) albo `check` (28) – adres ze starszej strony albo skrzynka ogólna/support/reklama; warto rzucić okiem przed wysyłką.
+Pełna lista ze źródłami: [`database/outreach-contacts.csv`](../database/outreach-contacts.csv) (kolumny `email`, `status`, `source` – strona, na której adres jest opublikowany, `note`). Kolumna `confidence`: `high` (248) albo `check` (32) – adres ze starszej strony, skrzynka ogólna/support/reklama albo adres imienny opublikowany wprost do spraw partnerskich (Earmilk) lub adres Gmail podany jako oficjalny kontakt biznesowy (The Needle Drop); warto rzucić okiem przed wysyłką.
 
 Pominięte w tej fali (147): platformy dystrybucyjne, organizacje zbiorowego zarządzania, granty/biura eksportowe, platformy e-book/audio – potrzebują innej oferty (integracja/partnerstwo technologiczne), nie zapytania kuratorskiego.
 
 ## Zasady
 
 1. **Tylko adresy z oficjalnej domeny podmiotu** (lub domeny organizatora/wydawcy, oznaczone w notatce), widoczne publicznie na jego stronie. Żadnych adresów zgadywanych.
-2. **Tylko adresy funkcyjne** (redakcja@, music@, partnerships@, info@). Adresy imienne pominięte (RODO).
+2. **Tylko adresy funkcyjne** (redakcja@, music@, partnerships@, info@). Adresy imienne pominięte (RODO) – jedyny wyjątek to adres, który organizacja spoza UE sama podaje wprost do spraw partnerskich (Earmilk, oznaczony `check`).
 3. **Polska – najpierw zapytanie o zgodę.** Pierwszy e-mail nie zawiera oferty handlowej, tylko pytanie, czy możemy przesłać informację (art. 10 ustawy o świadczeniu usług drogą elektroniczną, przepisy o marketingu bezpośrednim). Szczegóły wysyłamy dopiero po odpowiedzi „tak”.
 4. **Zagranica – krótki pitch** z jasną propozycją wartości i bez płatnych miejsc.
 5. **Rezygnacja w każdej wiadomości.** Odpowiedź „nie” / „no” = wpis na listę wykluczeń i brak dalszego kontaktu.
@@ -80,4 +80,4 @@ Dla mediów książkowych, festiwali literackich i wydawców tekst mówi o autor
 - Zgoda na warunki → **Convert to partner** (podmiot trafia do katalogu jako zweryfikowany partner).
 - „Nie” → etap **declined**, brak dalszego kontaktu.
 - Brak odpowiedzi po 10 dniach → jedno krótkie przypomnienie (tylko zagranica; w PL bez zgody nie ponawiamy).
-- Podmioty ze statusem `form` → zgłoszenie ręcznie przez ich formularz; `not_found` → ręczne sprawdzenie strony kontaktowej (adresy często ukryte przed robotami).
+- Podmioty ze statusem `form` → tekst z [OUTREACH-FORMS.md](OUTREACH-FORMS.md) wklejony ręcznie w ich formularz kontaktowy; `not_found` → ręczne sprawdzenie strony kontaktowej (adresy często ukryte przed robotami).
