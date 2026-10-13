@@ -258,7 +258,7 @@ test('ścieżka artysty: profil, EPK i awans poziomu po umieszczeniach', async (
   assert.equal(p.body.career.next.name, 'Lokalny');
 
   // 3 umieszczenia w 2 typach mediów → poziom „Lokalny”
-  const targets = store.data.outlets.filter((o) => o.sample && ['radio', 'podcast', 'newsletter'].includes(o.type));
+  const targets = store.data.outlets.filter((o) => o.sample && o.creatorTypes.includes('music') && ['radio', 'podcast', 'newsletter'].includes(o.type));
   for (const [i, o] of targets.entries()) {
     const key = 'k'.repeat(10) + i;
     const manageKey = `curator-key-${i}-xxxxxxxx`;
@@ -343,4 +343,98 @@ test('Drabina dostępu i efekt domina', async () => {
   const fresh = subs.filter((x) => domino.submissionIds.includes(x.id));
   assert.deepEqual(fresh.map((x) => x.outletId), [bigNew.body.outlet.id], 'tylko większe, dostępne miejsce');
   assert.match(fresh[0].message, /Mała playlista/, 'pitch zawiera dowód społeczny');
+});
+
+test('typy twórców: pisarz dostaje własne miejsca, kanały i harmonogram', async () => {
+  clock = new Date('2026-10-01T10:00:00Z');
+  const plan = await api('POST', '/api/campaigns/preview', { creatorType: 'writer', genre: 'kryminał', releaseDate: '2026-12-15', budgetPLN: 0 });
+  assert.equal(plan.status, 200);
+  const outlets = plan.body.waves.flatMap((w) => w.outlets);
+  assert.ok(outlets.length >= 3);
+  const ids = new Set(outlets.map((o) => o.id));
+  for (const o of store.data.outlets.filter((x) => ids.has(x.id))) assert.ok(o.creatorTypes.includes('writer'));
+  assert.ok(plan.body.tasks.some((t) => t.id === 'goodreads'), 'kanały dla pisarzy');
+  assert.ok(!plan.body.tasks.some((t) => t.id === 'spotify-pitch'), 'bez kanałów muzycznych');
+  assert.ok(plan.body.waves.some((w) => w.name.includes('podcasty i radio') && w.date === '2026-10-31'));
+
+  // muzyk nie może wysłać utworu do miejsca tylko dla pisarzy
+  const blog = store.data.outlets.find((o) => o.name === 'Zakładka – blog literacki');
+  const r = await api('POST', '/api/submissions', {
+    outletIds: [blog.id], artistName: 'M', artistEmail: 'm@example.com', trackTitle: 'T', trackUrl: 'https://example.com/m', acceptTerms: true,
+  });
+  assert.equal(r.status, 400);
+  const w = await api('POST', '/api/submissions', {
+    creatorType: 'writer', genre: 'kryminał', outletIds: [blog.id], artistName: 'Autorka', artistEmail: 'a@example.com',
+    trackTitle: 'Zbrodnia', trackUrl: 'https://example.com/ksiazka', acceptTerms: true,
+  });
+  assert.equal(w.status, 201);
+
+  const list = await api('GET', '/api/outlets?creator=dj');
+  assert.ok(list.body.outlets.length >= 3);
+  assert.ok(list.body.outlets.every((o) => o.creatorTypes.includes('dj')));
+});
+
+test('Światowa Baza Podmiotów: seed, CRM, CSV, outreach, konwersja i Dyrygent', async () => {
+  clock = new Date('2026-10-13T10:00:00Z');
+  const { seedEntitiesInto } = require('../lib/entities');
+  seedEntitiesInto(store, () => clock);
+  const A = { 'x-admin-token': 'admin-secret' };
+  assert.equal((await api('GET', '/api/admin/entities')).status, 403);
+
+  const all = await api('GET', '/api/admin/entities', null, A);
+  assert.ok(all.body.total >= 150, `seed ma ${all.body.total} podmiotów`);
+  assert.ok(all.body.countries >= 15);
+  assert.ok(all.body.entities.every((e) => e.stage === 'prospect' && !e.verified && !e.publicListing), 'seed = prospekty, nie partnerzy');
+  assert.ok(all.body.facets.creatorTypes.writer >= 30 && all.body.facets.creatorTypes.dj >= 25);
+
+  // publicznie nic, dopóki admin nie zweryfikuje
+  assert.equal((await api('GET', '/api/entities')).body.entities.length, 0);
+
+  const writers = await api('GET', '/api/admin/entities?creator=writer&region=Europa&q=festiwal', null, A);
+  assert.ok(writers.body.entities.length > 0);
+  assert.ok(writers.body.entities.every((e) => e.creatorTypes.includes('writer') && e.region === 'Europa'));
+
+  // duplikat
+  const kexp = all.body.entities.find((e) => e.name === 'KEXP');
+  assert.equal((await api('POST', '/api/admin/entities', { name: 'KEXP', url: 'https://www.kexp.org', kind: 'radio' }, A)).status, 409);
+
+  // CSV: eksport → import (z duplikatami i błędem)
+  const res = await fetch(`${base}/api/admin/entities/export`, { headers: A });
+  assert.match(res.headers.get('content-type'), /text\/csv/);
+  const csv = await res.text();
+  assert.ok(csv.startsWith('name,kind,creatorTypes'));
+  const imp = await api('POST', '/api/admin/entities/import', {
+    csv: `name,url,kind,creatorTypes,country,region,submission,model\nNowe Radio,https://nowe-radio.example,radio,music|dj,Polska,Europa,open,free\nKEXP,https://www.kexp.org,radio,music,USA,Ameryka Północna,contact,free\nZły,javascript:x,radio,music,,,,\n"=SUM(A1)",https://formula.example,blog,writer,,,,`,
+  }, A);
+  assert.equal(imp.body.added, 2);
+  assert.equal(imp.body.skipped, 2);
+
+  // etap + weryfikacja + publiczna lista
+  const p1 = await api('PATCH', `/api/admin/entities/${kexp.id}`, { stage: 'contacted', verified: true, publicListing: true, contactEmail: 'music@kexp.example' }, A);
+  assert.equal(p1.body.stage, 'contacted');
+  assert.equal(p1.body.stageHistory.length, 2);
+  const pub = (await api('GET', '/api/entities?creator=music')).body.entities;
+  assert.deepEqual(pub.map((e) => e.name), ['KEXP']);
+  assert.equal(pub[0].contactEmail, undefined, 'kontakt nie jest publiczny');
+
+  // Dyrygent dołącza zweryfikowane podmioty jako zadania
+  const plan = await api('POST', '/api/campaigns/preview', { genre: 'indie', releaseDate: '2026-12-20', budgetPLN: 0 });
+  assert.ok(plan.body.tasks.some((t) => t.id === `ent-${kexp.id}` && t.group === 'Baza światowa'));
+
+  // outreach PL / EN
+  const o = await api('GET', `/api/admin/entities/${kexp.id}/outreach?lang=en`, null, A);
+  assert.match(o.body.subject, /KEXP/);
+  assert.match(o.body.body, /capped at 30%/);
+
+  // konwersja w partnera katalogu
+  const conv = await api('POST', `/api/admin/entities/${kexp.id}/convert`, { genres: ['indie'], reach: 100000 }, A);
+  assert.equal(conv.status, 201);
+  assert.equal(conv.body.entity.stage, 'partner');
+  assert.ok(conv.body.manageKey);
+  const outlet = (await api('GET', `/api/outlets/${conv.body.outlet.id}`)).body;
+  assert.equal(outlet.verified, true);
+  assert.equal(outlet.entityId, kexp.id);
+  assert.equal((await api('POST', `/api/admin/entities/${kexp.id}/convert`, {}, A)).status, 409);
+  // partner nie jest już „zadaniem do samodzielnego zgłoszenia”
+  assert.equal((await api('GET', '/api/entities')).body.entities.length, 0);
 });
