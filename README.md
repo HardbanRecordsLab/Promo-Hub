@@ -25,6 +25,7 @@ Strategy, market map and partner plan (PL): [docs/STRATEGIA.md](docs/STRATEGIA.m
 - **CSV:** [`database/global-database.csv`](database/global-database.csv) – same columns as the admin import; edit in a spreadsheet and import back.
 - **In the app:** admin panel → Global Database (`#/admin/database`) – CRM stages, filters, outreach e-mails (EN/PL), CSV import/export, conversion into catalog partners.
 - **Regenerate the files:** `npm run export:db && python3 scripts/export-database-xlsx.py`
+- **Outreach contacts:** [`database/outreach-contacts.csv`](database/outreach-contacts.csv) – official role addresses found for 276 of 401 outreach targets, each with the page it was published on; process and e-mail templates in [`docs/OUTREACH.md`](docs/OUTREACH.md) (PL).
 - **Grow it:** [`docs/AGENT_PROMPT_DATABASE_RESEARCH.md`](docs/AGENT_PROMPT_DATABASE_RESEARCH.md) – a step-by-step prompt for an AI research agent; its CSV output imports directly.
 
 ## Running
