@@ -438,3 +438,60 @@ test('Światowa Baza Podmiotów: seed, CRM, CSV, outreach, konwersja i Dyrygent'
   // partner nie jest już „zadaniem do samodzielnego zgłoszenia”
   assert.equal((await api('GET', '/api/entities')).body.entities.length, 0);
 });
+
+test('Symulator Monte Carlo: rozkład wyników i szansa awansu', async () => {
+  const { simulate } = require('../lib/simulate');
+  const outlets = Array.from({ length: 10 }, (_, i) => ({ type: i % 2 ? 'radio' : 'playlist', country: 'Polska', reach: 10000, stats: { acceptanceRate: 50 } }));
+  const s = simulate(outlets, {
+    runs: 4000,
+    footprint: { placements: 0, reach: 0, types: new Set(), countries: new Set(), listeners: 1000 },
+    nextReq: { placements: 3, reach: 20000, countries: 1, types: 2, listeners: 500 },
+  });
+  assert.ok(s.placements.p10 <= s.placements.p50 && s.placements.p50 <= s.placements.p90);
+  assert.ok(s.placements.p50 >= 4 && s.placements.p50 <= 6, `mediana ~5, jest ${s.placements.p50}`);
+  assert.ok(s.chance.atLeast1 >= 99);
+  assert.ok(s.levelUpChance >= 90 && s.levelUpChance <= 100);
+  assert.deepEqual(simulate(outlets, { seed: 1 }), simulate(outlets, { seed: 1 }), 'deterministyczny');
+  assert.equal(simulate([], {}).placements.p50, 0);
+
+  const preview = await api('POST', '/api/campaigns/preview', { genre: 'pop', releaseDate: '2026-12-20', budgetPLN: 0 });
+  assert.ok(preview.body.simulation.runs > 0);
+  assert.equal(preview.body.simulation.nextLevel, 'Lokalny');
+});
+
+test('Autopilot kariery: uszeregowane następne ruchy', async () => {
+  clock = new Date('2026-11-05T10:00:00Z');
+  const { artistKey } = (await api('POST', '/api/artist/register')).body;
+  const h = { 'x-artist-key': artistKey };
+  let r = await api('GET', '/api/artist/next-actions', null, h);
+  assert.equal(r.body.actions[0].kind, 'profile', 'najpierw profil');
+  assert.ok(r.body.actions.some((a) => a.kind === 'campaign'));
+
+  await api('PUT', '/api/artist/profile', { name: 'Autopilot Test', genres: ['pop'], bio: 'x', photoUrl: 'https://example.com/p.jpg', links: { website: 'https://example.com' }, achievements: 'x' }, h);
+  const c = await api('POST', '/api/campaigns', {
+    artistName: 'Autopilot Test', artistEmail: 'ap@example.com', trackTitle: 'Lot', trackUrl: 'https://example.com/lot',
+    genre: 'pop', releaseDate: '2026-11-20', budgetPLN: 0, acceptTerms: true, artistKey,
+  });
+  assert.equal(c.status, 201);
+  assert.ok(c.body.campaign.simulation, 'kampania zapisuje symulację');
+  r = await api('GET', '/api/artist/next-actions', null, h);
+  const kinds = r.body.actions.map((a) => a.kind);
+  assert.ok(!kinds.includes('campaign'));
+  assert.ok(kinds.includes('task'), 'zadania Planu A–Z do nadrobienia');
+  const top = r.body.actions[0];
+  assert.ok(top.score >= r.body.actions.at(-1).score);
+  const task = r.body.actions.find((a) => a.kind === 'task');
+  assert.ok(task.campaignId && task.taskId);
+
+  // akceptacja w modelu prowizyjnym → w kolejnym miesiącu Autopilot przypomina o raporcie przychodu
+  clock = new Date('2026-11-21T10:00:00Z'); // fala playlist (T+1) wychodzi automatycznie
+  const sub = (await api('GET', '/api/artist/submissions', null, h)).body.submissions
+    .find((x) => ['commission', 'revshare'].includes(x.agreement.model));
+  const outlet = store.data.outlets.find((o) => o.id === sub.outletId);
+  const mk = `manage-${outlet.id}-xxxxxxxx`;
+  outlet.manageKeyHash = require('../lib/db').hashSecret(mk);
+  await api('PATCH', `/api/submissions/${sub.id}`, { status: 'accepted' }, { 'x-manage-key': mk });
+  clock = new Date('2026-12-03T10:00:00Z');
+  r = await api('GET', '/api/artist/next-actions', null, h);
+  assert.ok(r.body.actions.some((a) => a.kind === 'revenue' && a.title.includes('2026-11')));
+});

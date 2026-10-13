@@ -4,14 +4,20 @@ Platforma łącząca artystów z miejscami promocji muzyki – playlistami, radi
 
 Strategia, mapa rynku i partnerów: [docs/STRATEGIA.md](docs/STRATEGIA.md).
 
+## Dla kogo
+
+**Muzycy / zespoły, DJ-e / producenci, pisarze / autorzy / poeci** – każdy typ twórcy ma własne gatunki, typy miejsc, kanały oficjalne, fale kampanii i kroki rozwoju. Nowy typ (np. podcaster) = jeden wpis w `lib/creators.js` + kanały w `lib/channels.js` + kroki w `lib/playbook.js`.
+
 ## Najważniejsze mechanizmy
 
-- **Dyrygent kampanii** (`#/kampania`) – utwór + data premiery + budżet (także 0 zł) → dobór miejsc z każdej sekcji, harmonogram z oficjalnymi kanałami i automatyczna wysyłka zgłoszeń falami; eksport `.ics`; generator pitchu z `{nazwa}` / `{gatunki}`.
-- **Efekt domina** – akceptacja w kampanii automatycznie wysyła utwór do większych, dostępnych miejsc z dowodem społecznym w pitchu.
-- **Pula Efektu** – przychód utworu raportowany raz, prowizja dzielona między kuratorów, łącznie maks. `TRACK_COMMISSION_CAP_PERCENT` %.
+- **Master Dyrygent A–Z** (`#/kampania`) – dzieło + data premiery + budżet (także 0 zł) → dobór miejsc z każdej sekcji, **Plan A–Z: 45–60 zadań w 9 fazach** (Fundament → Materiały → Prawa i metadane → Dystrybucja → Pre-premiera → Premiera → Po premierze → Długi ogon → Skalowanie), oficjalne kanały, Światowa Baza, automatyczna wysyłka zgłoszeń falami; eksport `.ics`; generator pitchu z `{nazwa}` / `{gatunki}`.
+- **Symulator kampanii (Monte Carlo)** – przed startem: scenariusz ostrożny/typowy/optymistyczny (p10/p50/p90) i szansa awansu na kolejny poziom, liczone z realnych wskaźników kuratorów.
+- **Autopilot kariery** – uszeregowana lista „następnych najlepszych ruchów”: zaległe zadania, raporty przychodu, luki w profilu, cele poziomu z podpowiedziami miejsc, podmioty ze Światowej Bazy.
+- **Światowa Baza Podmiotów** (`#/admin/baza`) – 190 realnych podmiotów z 25 krajów (radio, media, festiwale, wydawcy, sync, pule DJ-skie, społeczności czytelników…) jako **prospekty** do pozyskania: CRM z etapami, generator outreach PL/EN, import/eksport CSV, konwersja w partnera katalogu. Zweryfikowane i oznaczone jako publiczne trafiają do Planu A–Z twórców.
+- **Efekt domina** – akceptacja w kampanii automatycznie wysyła dzieło do większych, dostępnych miejsc z dowodem społecznym w pitchu.
+- **Pula Efektu** – przychód dzieła raportowany raz, prowizja dzielona między kuratorów, łącznie maks. `TRACK_COMMISSION_CAP_PERCENT` %.
 - **Ścieżka artysty** (`#/artysta`) – 5 poziomów z mierzalnymi progami, plan kroków, publiczny press kit (`#/artysta/<slug>`).
-- **Drabina dostępu** – miejsca mogą wymagać minimalnego poziomu artysty.
-- **Kanały oficjalne** (`#/kanaly`) – darmowe narzędzia platform wpinane w harmonogram.
+- **Drabina dostępu** – miejsca mogą wymagać minimalnego poziomu twórcy.
 
 ## Uruchomienie
 
@@ -20,7 +26,9 @@ ADMIN_TOKEN=twoj-sekret PLATFORM_FEE_PERCENT=20 npm start   # http://localhost:3
 npm test
 ```
 
-Bez zależności zewnętrznych (Node ≥ 18). Dane trzymane są w `data/db.json` (zmienna `DB_FILE`). Przy pustej bazie ładowane są **przykładowe, fikcyjne** miejsca (`SEED=0` wyłącza).
+Bez zależności zewnętrznych (Node ≥ 18). Dane trzymane są w `data/db.json` (zmienna `DB_FILE`). Przy pustej bazie ładowane są **przykładowe, fikcyjne** miejsca katalogu oraz Światowa Baza realnych podmiotów jako prospekty (`SEED=0` wyłącza oba).
+
+> Światowa Baza zawiera realne podmioty z ich oficjalnymi stronami, ale **nie** są one partnerami platformy. Tryb zgłoszeń i warunki pochodzą z wiedzy publicznej i mogą być nieaktualne – zweryfikuj je przed oznaczeniem podmiotu jako publiczny.
 
 | Zmienna | Opis |
 |---|---|

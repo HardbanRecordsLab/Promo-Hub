@@ -192,6 +192,31 @@ details summary { cursor: pointer; color: var(--muted); }
 .epk-photo.placeholder { display: grid; place-items: center; font-size: 4rem; background: var(--surface-2); }
 summary b { color: var(--text); }
 
+.creators-row { margin-top: .75rem; }
+.warn-text { color: var(--warn); }
+.tl-entity { border-style: dashed; }
+details.phase { border: 1px solid var(--border); border-radius: var(--radius); padding: .6rem .8rem; margin-top: .6rem; background: var(--surface); }
+details.phase > summary { list-style: none; display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+details.phase > summary::-webkit-details-marker { display: none; }
+.phase-id { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; font-weight: 800; }
+.sim { background: linear-gradient(135deg, rgba(124, 92, 255, .12), rgba(255, 77, 109, .08)); }
+.sim-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .6rem; margin: .5rem 0 .75rem; }
+.sim-grid > div { display: flex; flex-direction: column; gap: .15rem; padding: .7rem; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--border); }
+.sim-grid b { font-size: 1.25rem; }
+.sim-grid .sim-mid { border-color: var(--accent-2); }
+.autopilot { border-color: var(--accent-2); }
+.actions-list { padding-left: 1.3rem; margin: 0; display: grid; gap: .6rem; }
+.actions-list li { padding: .55rem .2rem; border-bottom: 1px solid var(--border); }
+.actions-list li:last-child { border-bottom: 0; }
+.checks { display: flex; gap: 1rem; flex-wrap: wrap; }
+.ent-actions { display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; }
+.ent-actions select { width: auto; }
+details.inline { display: inline-block; }
+details.inline > summary { list-style: none; }
+details.inline > summary::-webkit-details-marker { display: none; }
+details.inline[open] { display: block; width: 100%; }
+.filters.single { grid-template-columns: minmax(200px, 320px); }
+
 @media (max-width: 860px) {
   .filters { grid-template-columns: 1fr 1fr; }
   .filters > :first-child { grid-column: 1 / -1; }
@@ -205,4 +230,5 @@ summary b { color: var(--text); }
   .levels { grid-template-columns: repeat(2, 1fr); }
   .tl { grid-template-columns: 1fr; }
   .epk { grid-template-columns: 1fr; justify-items: start; }
+  .sim-grid { grid-template-columns: 1fr; }
 }

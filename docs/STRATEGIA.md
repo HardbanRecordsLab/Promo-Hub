@@ -39,6 +39,11 @@ Uczciwie: żadna platforma nie może zagwarantować sławy. Promo Hub maksymaliz
 | **Ranking dopasowania 0–100** | gatunek, % akceptacji, % odpowiedzi, weryfikacja, zasięg, koszt z góry | ✅ |
 | **Zamrożone warunki** | Zmiana cennika kuratora nie działa wstecz | ✅ |
 | **Press kit (EPK)** | Publiczna karta artysty z poziomem i historią umieszczeń, dołączana do zgłoszeń | ✅ |
+| **Master Dyrygent A–Z** | 45–60 zadań w 9 fazach dla muzyków, DJ-ów i pisarzy: od celów i materiałów, przez prawa, metadane i dystrybucję, po długi ogon i skalowanie | ✅ |
+| **Symulator kampanii (Monte Carlo)** | Rozkład wyników (p10/p50/p90) i szansa awansu przed startem kampanii | ✅ |
+| **Autopilot kariery** | Uszeregowane „następne najlepsze ruchy” z całej platformy | ✅ |
+| **Światowa Baza Podmiotów** | 190 realnych podmiotów z 25 krajów jako lejek partnerski (CRM, outreach PL/EN, CSV, konwersja w partnera) i źródło zadań dla Dyrygenta | ✅ |
+| **Typy twórców** | Muzyk, DJ/producent, pisarz – własne gatunki, miejsca, kanały i plany | ✅ |
 | **Siła orkiestry** | Wskaźnik 0–100: ile sekcji gra, ile fal wyszło, ile zadań w kanałach oficjalnych wykonano | ✅ |
 
 ## 4. Mapa partnerów do włączenia (świat), od najtańszych dla artysty
@@ -62,6 +67,13 @@ Priorytet = (efekt dla artysty × przychód platformy) / koszt dla artysty.
 | 13 | Zagraniczni kuratorzy i radia (poziom 4+) | katalog z filtrem kraju, bio EN | 0 zł z góry | 20% | ★★★★ |
 
 Oficjalne darmowe kanały (Spotify for Artists, Apple Music for Artists, YouTube OAC, TikTok for Artists, Deezer for Creators, Amazon Music for Artists, Musixmatch, Bandsintown, BBC Introducing) są w hubie jako **zadania w harmonogramie**, nie partnerzy – artysta musi z nich korzystać, a Dyrygent pilnuje terminów (np. pitch w Spotify min. 7 dni przed premierą).
+
+### Światowa Baza – jak ją rozwijać do tysięcy wpisów
+
+1. **Import CSV** z własnych badań, list branżowych i narzędzi analitycznych (kolumny opisane w panelu `#/admin/baza`).
+2. **Lejek:** prospekt → kontakt (generator outreach PL/EN) → negocjacje → partner (konwersja w miejsce katalogu z kluczem kuratora).
+3. **Weryfikacja:** przed oznaczeniem „publiczny” sprawdź tryb zgłoszeń i warunki u źródła – dopiero wtedy podmiot trafia do Planu A–Z twórców.
+4. **Priorytet pozyskania:** podmioty z otwartymi zgłoszeniami i modelem bezpłatnym/prowizyjnym → największy efekt przy najniższym koszcie dla twórcy i platformy.
 
 ## 5. Model przychodów platformy
 
