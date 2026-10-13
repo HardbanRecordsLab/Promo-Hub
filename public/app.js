@@ -2,38 +2,62 @@
 
 (() => {
   const app = document.getElementById('app');
+  const PL = window.PH_PL || {};
   let META = null;
 
-  // ---------- narzędzia ----------
-  const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const pln = (n) => `${Number(n || 0).toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} zł`;
-  const num = (n) => Number(n || 0).toLocaleString('pl-PL');
-  const date = (iso) => (iso ? new Date(iso).toLocaleDateString('pl-PL') : '—');
-
+  // ---------- storage ----------
   const storage = {
     get(k, d = null) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } },
-    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* tryb prywatny */ } },
-    del(k) { try { localStorage.removeItem(k); } catch { /* tryb prywatny */ } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* private mode */ } },
+    del(k) { try { localStorage.removeItem(k); } catch { /* private mode */ } },
   };
+
+  // ---------- i18n: English keys, Polish dictionary in i18n-pl.js ----------
+  let LANG = storage.get('lang', 'en') === 'pl' ? 'pl' : 'en';
+  function t(key, params) {
+    let s = (LANG === 'pl' && PL[key]) || key;
+    if (params) s = s.replace(/\{(\w+)\}/g, (m, k) => (params[k] !== undefined ? params[k] : m));
+    return s;
+  }
+  const locale = () => (LANG === 'pl' ? 'pl-PL' : 'en-GB');
+
+  // ---------- helpers ----------
+  const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const money = (n) => (LANG === 'pl'
+    ? `${Number(n || 0).toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} zł`
+    : `${Number(n || 0).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} PLN`);
+  const num = (n) => Number(n || 0).toLocaleString(locale());
+  const date = (iso) => (iso ? new Date(iso).toLocaleDateString(locale()) : '—');
+  const genre = (g) => (META.genreLabels[g] || g);
+  let regionNames = null;
+  function country(code) {
+    if (!code) return '—';
+    if (code === 'WW') return t('Worldwide');
+    if (!/^[A-Z]{2}$/.test(code)) return code;
+    try {
+      if (!regionNames || regionNames.lang !== LANG) regionNames = { lang: LANG, fmt: new Intl.DisplayNames([LANG], { type: 'region' }) };
+      return regionNames.fmt.of(code) || code;
+    } catch { return code; }
+  }
 
   async function api(method, path, body, headers = {}) {
     const res = await fetch(path, {
       method,
-      headers: { 'Content-Type': 'application/json', ...headers },
+      headers: { 'Content-Type': 'application/json', 'x-lang': LANG, ...headers },
       body: body ? JSON.stringify(body) : undefined,
     });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || `Błąd ${res.status}`);
+    if (!res.ok) throw new Error(data.error || t('Error {status}', { status: res.status }));
     return data;
   }
 
   let toastTimer;
   function toast(msg, isError = false) {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.className = `show${isError ? ' error' : ''}`;
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = `show${isError ? ' error' : ''}`;
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { t.className = ''; }, 3500);
+    toastTimer = setTimeout(() => { el.className = ''; }, 3500);
   }
 
   function formData(form) {
@@ -42,7 +66,7 @@
     return out;
   }
 
-  // Obsługa formularza z blokadą przycisku i komunikatem błędu.
+  // Form submit with a disabled button and an error toast.
   function onSubmit(form, handler) {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -52,14 +76,20 @@
     });
   }
 
-  // ---------- koszyk (wybrane miejsca) ----------
+  function options(map, selected = '', empty = null) {
+    const entries = Array.isArray(map) ? map.map((g) => [g, genre(g)]) : Object.entries(map).map(([k, v]) => [k, typeof v === 'string' ? v : v.label]);
+    return (empty !== null ? `<option value="">${esc(empty)}</option>` : '') +
+      entries.map(([k, v]) => `<option value="${esc(k)}"${String(k) === String(selected) ? ' selected' : ''}>${esc(v)}</option>`).join('');
+  }
+
+  // ---------- selected outlets (cart) ----------
   const cart = {
     ids() { return storage.get('cart', []); },
     has(id) { return this.ids().includes(id); },
     toggle(id) {
       const ids = this.ids();
       const i = ids.indexOf(id);
-      if (i >= 0) ids.splice(i, 1); else if (ids.length < 25) ids.push(id); else { toast('Maks. 25 miejsc w jednym zgłoszeniu.', true); return; }
+      if (i >= 0) ids.splice(i, 1); else if (ids.length < 25) ids.push(id); else { toast(t('At most 25 outlets per submission.'), true); return; }
       storage.set('cart', ids);
       updateCartBadge();
     },
@@ -67,17 +97,27 @@
   };
   function updateCartBadge() {
     const b = document.getElementById('cartCount');
+    if (!b) return;
     const n = cart.ids().length;
     b.textContent = n;
     b.hidden = n === 0;
   }
 
-  // ---------- komponenty ----------
+  // ---------- creator type (musician / DJ / writer) ----------
+  const creator = {
+    get() { const c = storage.get('creatorType', 'music'); return META.creators[c] ? c : 'music'; },
+    set(c) { if (META.creators[c]) storage.set('creatorType', c); },
+    info(c) { return META.creators[c || this.get()]; },
+  };
+  const creatorSelect = (selected = creator.get()) => `<select name="creatorType" data-creator>${options(META.creators, selected)}</select>`;
+  const genreOptions = (ct, selected = '', empty = null) => options(META.creators[ct].genres, selected, empty);
+
+  // ---------- components ----------
   function modelBadge(c) {
     const label = META.models[c.model]?.label || c.model;
     let detail = '';
-    if (c.model === 'commission' || c.model === 'revshare') detail = ` ${c.ratePercent}% / ${c.durationMonths} mies.`;
-    if (c.model === 'fee') detail = ` ${pln(c.feePLN)}`;
+    if ((c.model === 'commission' || c.model === 'revshare') && c.ratePercent) detail = ` ${c.ratePercent}% / ${t('{n} mo.', { n: c.durationMonths })}`;
+    if (c.model === 'fee' && c.feePLN) detail = ` ${money(c.feePLN)}`;
     return `<span class="model model-${esc(c.model)}">${esc(label)}${esc(detail)}</span>`;
   }
 
@@ -93,25 +133,25 @@
         <div class="card-head">
           <div>
             <div class="muted small">${esc(META.types[o.type] || o.type)}</div>
-            <h3><a href="#/miejsce/${esc(o.id)}">${esc(o.name)}</a></h3>
+            <h3><a href="#/outlet/${esc(o.id)}">${esc(o.name)}</a></h3>
           </div>
           ${modelBadge(o.collaboration)}
         </div>
         ${match}
         <div class="meta">
           <span>👥 ${o.reach ? num(o.reach) : '—'}</span>
-          <span>⏱ odp. do ${esc(o.responseDays || 7)} dni</span>
-          ${st.acceptanceRate !== null && st.acceptanceRate !== undefined ? `<span>✅ ${st.acceptanceRate}% akcept.</span>` : ''}
-          ${o.country ? `<span>📍 ${esc(o.country)}</span>` : ''}
+          <span>⏱ ${esc(t('reply within {n} days', { n: o.responseDays || 7 }))}</span>
+          ${st.acceptanceRate !== null && st.acceptanceRate !== undefined ? `<span>✅ ${esc(t('{n}% accepted', { n: st.acceptanceRate }))}</span>` : ''}
+          ${o.country ? `<span>📍 ${esc(country(o.country))}</span>` : ''}
         </div>
-        <div class="tags">${(o.genres.length ? o.genres : ['wszystkie gatunki']).map((g) => `<span class="tag">${esc(g)}</span>`).join('')}</div>
-        <div class="muted small">dla: ${o.creatorTypes.map((c) => esc(META.creators[c]?.label || c)).join(', ')}</div>
-        <div>${o.verified ? '<span class="verified">✔ zweryfikowany</span>' : '<span class="muted small">niezweryfikowany</span>'} ${o.sample ? '<span class="sample">· przykład</span>' : ''} ${(o.minLevel || 1) > 1 ? `<span class="tag">🔒 od poziomu ${o.minLevel}</span>` : ''}</div>
+        <div class="tags">${(o.genres.length ? o.genres.map(genre) : [t('all genres')]).map((g) => `<span class="tag">${esc(g)}</span>`).join('')}</div>
+        <div class="muted small">${esc(t('for:'))} ${o.creatorTypes.map((c) => esc(META.creators[c]?.label || c)).join(', ')}</div>
+        <div>${o.verified ? `<span class="verified">✔ ${esc(t('verified'))}</span>` : `<span class="muted small">${esc(t('not verified'))}</span>`} ${o.sample ? `<span class="sample">· ${esc(t('sample'))}</span>` : ''} ${(o.minLevel || 1) > 1 ? `<span class="tag">🔒 ${esc(t('from level {n}', { n: o.minLevel }))}</span>` : ''}</div>
         <div class="actions">
           ${o.acceptsSubmissions
-            ? `<button class="btn small ${sel ? '' : 'primary'}" data-cart="${esc(o.id)}">${sel ? '✓ Wybrane' : '+ Dodaj do zgłoszenia'}</button>`
-            : '<span class="muted small">Nie przyjmuje teraz zgłoszeń</span>'}
-          <a class="btn small ghost" href="#/miejsce/${esc(o.id)}">Szczegóły</a>
+            ? `<button class="btn small ${sel ? '' : 'primary'}" data-cart="${esc(o.id)}">${sel ? `✓ ${esc(t('Selected'))}` : `+ ${esc(t('Add to submission'))}`}</button>`
+            : `<span class="muted small">${esc(t('Not accepting submissions right now'))}</span>`}
+          <a class="btn small ghost" href="#/outlet/${esc(o.id)}">${esc(t('Details'))}</a>
         </div>
       </article>`;
   }
@@ -120,81 +160,78 @@
     root.querySelectorAll('[data-cart]').forEach((b) => b.addEventListener('click', () => { cart.toggle(b.dataset.cart); rerender(); }));
   }
 
-  function options(map, selected = '', empty = null) {
-    const entries = Array.isArray(map) ? map.map((g) => [g, g]) : Object.entries(map).map(([k, v]) => [k, typeof v === 'string' ? v : v.label]);
-    return (empty !== null ? `<option value="">${esc(empty)}</option>` : '') +
-      entries.map(([k, v]) => `<option value="${esc(k)}"${k === selected ? ' selected' : ''}>${esc(v)}</option>`).join('');
+  function statusBadge(s) {
+    return `<span class="status st-${esc(s)}">${esc(META.statuses[s] || s)}</span>`;
   }
 
-  // ---------- typ twórcy (muzyk / DJ / pisarz) ----------
-  const creator = {
-    get() { const c = storage.get('creatorType', 'music'); return META.creators[c] ? c : 'music'; },
-    set(c) { if (META.creators[c]) storage.set('creatorType', c); },
-    info(c) { return META.creators[c || this.get()]; },
-  };
-  const creatorSelect = (selected = creator.get()) => `<select name="creatorType" data-creator>${options(META.creators, selected)}</select>`;
-  const genreOptions = (ct, selected = '', empty = null) => options(META.creators[ct].genres, selected, empty);
+  function revenueTable(sub, { curatorKey } = {}) {
+    if (!sub.revenue.length) return `<p class="muted small">${esc(t('No revenue reported yet.'))}</p>`;
+    return `<table class="rev"><thead><tr><th>${esc(t('Period'))}</th><th>${esc(t('Revenue'))}</th><th>${esc(t('Commission'))}</th><th>${esc(t('Status'))}</th></tr></thead><tbody>
+      ${sub.revenue.map((r) => `<tr>
+        <td>${esc(r.period)}</td><td>${money(r.amountPLN)}</td>
+        <td>${r.inAgreement ? `${money(r.commissionPLN)}${r.poolSize > 1 ? ` <span class="muted small">(${esc(t('Pool: {rate}%, {n} curators', { rate: r.effectiveRatePercent, n: r.poolSize }))})</span>` : ''}` : `<span class="muted">${esc(t('outside the agreement'))}</span>`}</td>
+        <td>${r.commissionPLN ? (r.paid ? `<span class="yes">${esc(t('paid'))}</span>` : (curatorKey ? `<button class="btn small" data-paid="${esc(sub.id)}|${esc(r.id)}">${esc(t('Confirm payment'))}</button>` : esc(t('due')))) : '—'}</td>
+      </tr>`).join('')}
+    </tbody></table>`;
+  }
 
-  // ---------- widoki ----------
+  // ---------- views ----------
   async function viewHome() {
     const s = await api('GET', '/api/stats');
     app.innerHTML = `
       <section class="hero">
-        <h1>Z anonimowego debiutanta w <span class="grad">twórcę, którego zna świat</span>.</h1>
-        <p class="lead">Dla muzyków, DJ-ów i pisarzy. Promo Hub gra jak orkiestra: playlisty, radia, YouTube, TikTok i BookTok, blogi, podcasty, magazyny, DJ-e, kluby, festiwale, wydawcy i sync – zsynchronizowane przez Master Dyrygenta od A do Z. Płacisz za efekt: w modelu prowizyjnym kurator zarabia dopiero wtedy, gdy Twoje dzieło zarabia.</p>
+        <h1>${esc(t('From unknown newcomer to'))} <span class="grad">${esc(t('a creator the world knows'))}</span>.</h1>
+        <p class="lead">${esc(t('For musicians, DJs and writers. Promo Hub plays like an orchestra: playlists, radio, YouTube, TikTok and BookTok, blogs, podcasts, magazines, DJs, clubs, festivals, publishers and sync – synchronized by the Master Conductor from A to Z. You pay for results: on commission, curators earn only when your work earns.'))}</p>
         <div class="tags creators-row">${Object.values(META.creators).map((c) => `<span class="tag">${esc(c.label)}</span>`).join('')}</div>
         <div class="cta-row">
-          <a class="btn primary" href="#/kampania">🎼 Uruchom kampanię – od 0 zł</a>
-          <a class="btn" href="#/artysta">Sprawdź swój poziom</a>
-          <a class="btn" href="#/kurator">Dodaj swoją playlistę lub radio</a>
+          <a class="btn primary" href="#/campaign">🎼 ${esc(t('Launch a campaign – from €0'))}</a>
+          <a class="btn" href="#/creator">${esc(t('Check your level'))}</a>
+          <a class="btn" href="#/curators">${esc(t('List your playlist, station or channel'))}</a>
         </div>
       </section>
       <div class="stats">
-        <div class="stat"><b>${num(s.outlets)}</b><span>miejsc promocji</span></div>
-        <div class="stat"><b>${num(s.totalReach)}</b><span>łączny zasięg</span></div>
-        <div class="stat"><b>${num(s.submissions)}</b><span>zgłoszonych dzieł</span></div>
-        <div class="stat"><b>${num(s.placed)}</b><span>umieszczeń</span></div>
+        <div class="stat"><b>${num(s.outlets)}</b><span>${esc(t('outlets'))}</span></div>
+        <div class="stat"><b>${num(s.totalReach)}</b><span>${esc(t('total reach'))}</span></div>
+        <div class="stat"><b>${num(s.submissions)}</b><span>${esc(t('works submitted'))}</span></div>
+        <div class="stat"><b>${num(s.placed)}</b><span>${esc(t('placements'))}</span></div>
       </div>
-      <h2>Ścieżka artysty: 5 poziomów</h2>
+      <h2>${esc(t('Creator Path: 5 levels'))}</h2>
       <div class="levels big">
-        <div class="lvl"><b>1</b><span>Debiutant</span><small>profil, press kit, pierwsze umieszczenia</small></div>
-        <div class="lvl"><b>2</b><span>Lokalny</span><small>radia regionalne, podcasty, pierwsze playlisty</small></div>
-        <div class="lvl"><b>3</b><span>Krajowy</span><small>YouTube, TikTok, blogi, duże playlisty</small></div>
-        <div class="lvl"><b>4</b><span>Międzynarodowy</span><small>zagraniczne playlisty i radia, sync, festiwale</small></div>
-        <div class="lvl"><b>5</b><span>Globalny</span><small>6+ krajów, featuringi, własna audycja</small></div>
+        <div class="lvl"><b>1</b><span>${esc(t('Newcomer'))}</span><small>${esc(t('profile, press kit, first placements'))}</small></div>
+        <div class="lvl"><b>2</b><span>${esc(t('Local'))}</span><small>${esc(t('regional radio, podcasts, first playlists'))}</small></div>
+        <div class="lvl"><b>3</b><span>${esc(t('National'))}</span><small>${esc(t('YouTube, TikTok, blogs, big playlists'))}</small></div>
+        <div class="lvl"><b>4</b><span>${esc(t('International'))}</span><small>${esc(t('foreign playlists and radio, sync, festivals'))}</small></div>
+        <div class="lvl"><b>5</b><span>${esc(t('Global'))}</span><small>${esc(t('6+ countries, collaborations, your own show'))}</small></div>
       </div>
-      <p class="muted">Każdy poziom ma mierzalne cele liczone z prawdziwych umieszczeń – i konkretny plan kolejnych kroków.</p>
-      <h2>Jak to działa</h2>
+      <p class="muted">${esc(t('Every level has measurable goals computed from real placements – and a concrete plan of next steps.'))}</p>
+      <h2>${esc(t('How it works'))}</h2>
       <div class="steps">
-        <div class="step"><h3>Dyrygent dobiera orkiestrę</h3><p class="muted">Podajesz utwór, datę premiery i budżet (także 0 zł). System wybiera najlepsze miejsca z każdej sekcji: radio, playlisty, video, media, DJ-e.</p></div>
-        <div class="step"><h3>Fale w idealnym momencie</h3><p class="muted">Radio 6 tygodni przed premierą, media 3 tygodnie, twórcy 2 tygodnie, playlisty w dniu premiery – wysyłane automatycznie, z osobistym pitchem do każdego kuratora.</p></div>
-        <div class="step"><h3>Gwarancja odpowiedzi</h3><p class="muted">Kurator ma ustalony termin. Brak decyzji = zgłoszenie wygasa, a kurator spada w rankingu.</p></div>
-        <div class="step"><h3>Rozliczenie od efektu</h3><p class="muted">Po umieszczeniu utworu zgłaszasz przychody, a system sam wylicza prowizję tylko za okres umowy.</p></div>
+        <div class="step"><h3>${esc(t('The Conductor picks your orchestra'))}</h3><p class="muted">${esc(t('Enter your work, release date and budget (even €0). The system picks the best outlets from every section: radio, playlists, video, media, DJs.'))}</p></div>
+        <div class="step"><h3>${esc(t('Waves at the perfect moment'))}</h3><p class="muted">${esc(t('Radio 6 weeks before release, media 3 weeks, creators 2 weeks, playlists on release day – sent automatically with a personal pitch for every curator.'))}</p></div>
+        <div class="step"><h3>${esc(t('Guaranteed response'))}</h3><p class="muted">${esc(t('Every curator has a deadline. No decision = the submission expires and the curator drops in the ranking.'))}</p></div>
+        <div class="step"><h3>${esc(t('Pay for results'))}</h3><p class="muted">${esc(t('After placement you report revenue and the system calculates commission – only for the agreement period, capped by the Effect Pool.'))}</p></div>
       </div>
-      <h2>Dlaczego Promo Hub</h2>
+      <h2>${esc(t('Why Promo Hub'))}</h2>
       <div class="panel table-wrap">
         <table class="compare">
-          <thead><tr><th></th><th>Promo Hub</th><th>Typowe serwisy płatnych zgłoszeń</th></tr></thead>
+          <thead><tr><th></th><th>Promo Hub</th><th>${esc(t('Typical paid-submission services'))}</th></tr></thead>
           <tbody>
-            <tr><td>Master Dyrygent A–Z: 45–60 zadań w 9 fazach, od fundamentu po skalowanie</td><td class="yes">dla muzyków, DJ-ów i pisarzy</td><td class="no">pojedyncze usługi</td></tr>
-            <tr><td>Symulator kampanii (Monte Carlo) – rozkład wyników i szansa awansu przed startem</td><td class="yes">tak</td><td class="no">—</td></tr>
-            <tr><td>Autopilot kariery – zawsze wiesz, jaki ruch da teraz najwięcej</td><td class="yes">tak</td><td class="no">—</td></tr>
-            <tr><td>Światowa Baza Podmiotów – radia, media, festiwale, wydawcy, sync z wielu krajów</td><td class="yes">w planie Dyrygenta</td><td class="no">—</td></tr>
-            <tr><td>Dyrygent kampanii: jedna premiera, wszystkie media, fale w optymalnym czasie</td><td class="yes">automatycznie</td><td class="no">ręcznie, zgłoszenie po zgłoszeniu</td></tr>
-            <tr><td>Efekt domina: akceptacja automatycznie otwiera większe miejsca</td><td class="yes">tak, z dowodem społecznym w pitchu</td><td class="no">—</td></tr>
-            <tr><td>Pula Efektu: łączna prowizja utworu ograniczona limitem</td><td class="yes">tak, maks. ${esc(META.trackCommissionCapPercent)}% niezależnie od liczby kuratorów</td><td class="no">—</td></tr>
-            <tr><td>Ścieżka artysty i Drabina dostępu</td><td class="yes">5 poziomów, mierzalne cele, plan kroków</td><td class="no">—</td></tr>
-            <tr><td>Koszt dla artysty z góry</td><td class="yes">0 zł w modelu prowizyjnym</td><td class="no">kredyty za każde zgłoszenie</td></tr>
-            <tr><td>Kurator zarabia, gdy…</td><td class="yes">utwór przynosi przychód</td><td class="no">tylko przesłucha</td></tr>
-            <tr><td>Rodzaje miejsc</td><td class="yes">playlisty, radio FM i online, YouTube, TikTok, Instagram, blogi, podcasty, DJ-e, kluby, TV, sync, wytwórnie</td><td class="no">głównie playlisty i blogi</td></tr>
-            <tr><td>Termin odpowiedzi</td><td class="yes">gwarantowany, wpływa na ranking</td><td class="no">różnie</td></tr>
-            <tr><td>Publiczna skuteczność kuratora</td><td class="yes">% akceptacji, % odpowiedzi, czas reakcji</td><td class="no">często ukryta</td></tr>
-            <tr><td>Zamrożone warunki umowy</td><td class="yes">tak, zmiana cennika nie działa wstecz</td><td class="no">—</td></tr>
-            <tr><td>Zgodność z regulaminami streamingu</td><td class="yes">bez płatnych gwarantowanych miejsc</td><td class="no">różnie</td></tr>
+            <tr><td>${esc(t('Master Conductor A–Z: 45–60 tasks in 9 phases, from foundation to scaling'))}</td><td class="yes">${esc(t('for musicians, DJs and writers'))}</td><td class="no">${esc(t('single services'))}</td></tr>
+            <tr><td>${esc(t('Campaign Simulator (Monte Carlo) – outcome range and level-up chance before you start'))}</td><td class="yes">${esc(t('yes'))}</td><td class="no">—</td></tr>
+            <tr><td>${esc(t('Career Autopilot – always know which move pays off most right now'))}</td><td class="yes">${esc(t('yes'))}</td><td class="no">—</td></tr>
+            <tr><td>${esc(t('Global Database – radio, media, festivals, publishers, sync in many countries'))}</td><td class="yes">${esc(t('in your Conductor plan'))}</td><td class="no">—</td></tr>
+            <tr><td>${esc(t('Domino effect: an acceptance automatically opens bigger outlets'))}</td><td class="yes">${esc(t('yes, with social proof in the pitch'))}</td><td class="no">—</td></tr>
+            <tr><td>${esc(t('Effect Pool: total commission per work is capped'))}</td><td class="yes">${esc(t('max {n}% no matter how many curators', { n: META.trackCommissionCapPercent }))}</td><td class="no">—</td></tr>
+            <tr><td>${esc(t('Creator Path and Access Ladder'))}</td><td class="yes">${esc(t('5 levels, measurable goals, step plan'))}</td><td class="no">—</td></tr>
+            <tr><td>${esc(t('Upfront cost for creators'))}</td><td class="yes">${esc(t('€0 on commission'))}</td><td class="no">${esc(t('credits for every submission'))}</td></tr>
+            <tr><td>${esc(t('Curators earn when…'))}</td><td class="yes">${esc(t('the work generates revenue'))}</td><td class="no">${esc(t('they merely listen'))}</td></tr>
+            <tr><td>${esc(t('Response time'))}</td><td class="yes">${esc(t('guaranteed, affects ranking'))}</td><td class="no">${esc(t('varies'))}</td></tr>
+            <tr><td>${esc(t('Public curator performance'))}</td><td class="yes">${esc(t('% accepted, % on time, reaction time'))}</td><td class="no">${esc(t('often hidden'))}</td></tr>
+            <tr><td>${esc(t('Compliance with streaming rules'))}</td><td class="yes">${esc(t('no paid guaranteed placements'))}</td><td class="no">${esc(t('varies'))}</td></tr>
           </tbody>
         </table>
       </div>
-      <h2>Modele współpracy</h2>
+      <h2>${esc(t('Collaboration models'))}</h2>
       <div class="grid">
         ${Object.entries(META.models).map(([k, m]) => `<div class="card"><span class="model model-${esc(k)}">${esc(m.label)}</span><p class="muted">${esc(m.description)}</p></div>`).join('')}
       </div>`;
@@ -205,18 +242,16 @@
     const ct = creator.get();
     if (f.genre && !META.creators[ct].genres.includes(f.genre)) f.genre = '';
     app.innerHTML = `
-      <h1>Katalog miejsc promocji</h1>
-      <p class="muted">Playlisty, radia, kanały, blogi, magazyny, podcasty, DJ-e, wydawcy i więcej. Zaznacz miejsca i wyślij do nich swoje dzieło jednym zgłoszeniem.</p>
+      <h1>${esc(t('Outlet catalog'))}</h1>
+      <p class="muted">${esc(t('Playlists, radio, channels, blogs, magazines, podcasts, DJs, publishers and more. Select outlets and send your work to all of them in one submission.'))}</p>
       <form class="filters" id="filters">
-        <input name="q" placeholder="Szukaj: nazwa, opis, kraj…" value="${esc(f.q)}">
+        <input name="q" placeholder="${esc(t('Search: name, description, country…'))}" value="${esc(f.q)}">
         ${creatorSelect(ct)}
-        <select name="type">${options(META.types, f.type, 'Wszystkie typy')}</select>
-        <select name="genre">${genreOptions(ct, f.genre, 'Wszystkie gatunki')}</select>
-        <select name="model">${options(META.models, f.model, 'Każdy model')}</select>
-        <select name="sort">
-          ${options({ reach: 'Największy zasięg', rate: 'Najniższa prowizja', new: 'Najnowsze', name: 'Nazwa A–Z' }, f.sort)}
-        </select>
-        <label class="check"><input type="checkbox" name="open" ${f.open ? 'checked' : ''}> tylko przyjmujące zgłoszenia</label>
+        <select name="type">${options(META.types, f.type, t('All types'))}</select>
+        <select name="genre">${genreOptions(ct, f.genre, t('All genres'))}</select>
+        <select name="model">${options(META.models, f.model, t('Any model'))}</select>
+        <select name="sort">${options({ reach: t('Biggest reach'), rate: t('Lowest commission'), new: t('Newest'), name: t('Name A–Z') }, f.sort)}</select>
+        <label class="check"><input type="checkbox" name="open" ${f.open ? 'checked' : ''}> ${esc(t('accepting submissions only'))}</label>
       </form>
       <div id="results"></div>
       <div class="cta-row" id="cartCta"></div>`;
@@ -230,18 +265,18 @@
       const qs = new URLSearchParams({ ...state, creator: d.creatorType, open: state.open ? '1' : '' });
       const { outlets } = await api('GET', `/api/outlets?${qs}`);
       const render = () => {
-        results.innerHTML = outlets.length ? `<div class="grid">${outlets.map(outletCard).join('')}</div>` : '<div class="empty">Brak wyników – zmień filtry.</div>';
+        results.innerHTML = outlets.length ? `<div class="grid">${outlets.map(outletCard).join('')}</div>` : `<div class="empty">${esc(t('No results – change the filters.'))}</div>`;
         bindCartButtons(results, render);
         const n = cart.ids().length;
-        document.getElementById('cartCta').innerHTML = n ? `<a class="btn primary" href="#/wyslij">Wyślij do wybranych (${n}) →</a>` : '';
+        document.getElementById('cartCta').innerHTML = n ? `<a class="btn primary" href="#/send">${esc(t('Send to selected ({n}) →', { n }))}</a>` : '';
       };
       render();
     }
-    let t;
+    let timer;
     form.addEventListener('input', (e) => {
       if (e.target.name === 'creatorType') { creator.set(e.target.value); viewCatalog(); return; }
-      clearTimeout(t);
-      t = setTimeout(() => load().catch((err) => toast(err.message, true)), 200);
+      clearTimeout(timer);
+      timer = setTimeout(() => load().catch((err) => toast(err.message, true)), 200);
     });
     form.addEventListener('submit', (e) => e.preventDefault());
     await load();
@@ -252,14 +287,14 @@
     const saved = storage.get('matchGenre', '');
     const last = META.creators[ct].genres.includes(saved) ? saved : '';
     app.innerHTML = `
-      <h1>Dopasuj miejsca do swojego dzieła</h1>
-      <p class="muted">Ranking 0–100 uwzględnia zgodność gatunku, skuteczność kuratora (% akceptacji), rzetelność (% odpowiedzi w terminie), weryfikację, zasięg i to, czy płacisz z góry.</p>
+      <h1>${esc(t('Match outlets to your work'))}</h1>
+      <p class="muted">${esc(t('The 0–100 ranking combines genre fit, curator performance (% accepted), reliability (% answered on time), verification, reach and whether you pay upfront.'))}</p>
       <form class="filters" id="mf">
         ${creatorSelect(ct)}
-        <select name="genre" required>${genreOptions(ct, last, 'Wybierz gatunek')}</select>
-        <select name="type">${options(META.types, '', 'Wszystkie typy')}</select>
-        <select name="model">${options(META.models, '', 'Każdy model')}</select>
-        <button class="btn primary" type="submit">Pokaż najlepsze</button>
+        <select name="genre" required>${genreOptions(ct, last, t('Choose a genre'))}</select>
+        <select name="type">${options(META.types, '', t('All types'))}</select>
+        <select name="model">${options(META.models, '', t('Any model'))}</select>
+        <button class="btn primary" type="submit">${esc(t('Show the best'))}</button>
       </form>
       <div id="mres"></div>`;
     const form = document.getElementById('mf');
@@ -270,9 +305,9 @@
       const { outlets } = await api('GET', `/api/match?${new URLSearchParams({ genre: d.genre, type: d.type, model: d.model, creator: d.creatorType })}`);
       const render = () => {
         res.innerHTML = outlets.length
-          ? `<div class="cta-row"><button class="btn" id="addTop">+ Dodaj 10 najlepszych do zgłoszenia</button><a class="btn primary" href="#/wyslij">Przejdź do wysyłki →</a></div><br>
+          ? `<div class="cta-row"><button class="btn" id="addTop">+ ${esc(t('Add the top 10 to your submission'))}</button><a class="btn primary" href="#/send">${esc(t('Go to sending →'))}</a></div><br>
              <div class="grid">${outlets.map(outletCard).join('')}</div>`
-          : '<div class="empty">Brak dopasowań – spróbuj innego gatunku lub typu.</div>';
+          : `<div class="empty">${esc(t('No matches – try another genre or type.'))}</div>`;
         bindCartButtons(res, render);
         const top = document.getElementById('addTop');
         if (top) top.addEventListener('click', () => {
@@ -281,7 +316,7 @@
           storage.set('cart', ids);
           updateCartBadge();
           render();
-          toast('Dodano najlepsze dopasowania.');
+          toast(t('Top matches added.'));
         });
       };
       render();
@@ -295,35 +330,36 @@
     const o = await api('GET', `/api/outlets/${encodeURIComponent(id)}`);
     const st = o.stats;
     const m = META.models[o.collaboration.model];
+    const pct = (v) => (v === null || v === undefined ? '—' : `${v}%`);
     app.innerHTML = `
-      <p><a href="#/katalog">← Katalog</a></p>
+      <p><a href="#/catalog">← ${esc(t('Catalog'))}</a></p>
       <div class="split">
         <div>
           <div class="muted">${esc(META.types[o.type])}</div>
           <h1>${esc(o.name)}</h1>
-          <p>${o.verified ? '<span class="verified">✔ zweryfikowany</span>' : '<span class="muted">niezweryfikowany</span>'} ${o.sample ? '<span class="sample">· przykładowy wpis</span>' : ''}</p>
-          <p>${esc(o.description) || '<span class="muted">Brak opisu.</span>'}</p>
-          <div class="tags">${(o.genres.length ? o.genres : ['wszystkie gatunki']).map((g) => `<span class="tag">${esc(g)}</span>`).join('')}</div>
-          <p class="meta"><span>👥 zasięg: ${o.reach ? num(o.reach) : '—'}</span><span>📍 ${esc(o.country || '—')}</span><span>🗣 ${esc(o.language || '—')}</span></p>
-          <p><a href="${esc(o.url)}" target="_blank" rel="noopener noreferrer nofollow">Otwórz profil / playlistę ↗</a></p>
+          <p>${o.verified ? `<span class="verified">✔ ${esc(t('verified'))}</span>` : `<span class="muted">${esc(t('not verified'))}</span>`} ${o.sample ? `<span class="sample">· ${esc(t('sample entry'))}</span>` : ''}</p>
+          <p>${o.description ? esc(o.description) : `<span class="muted">${esc(t('No description.'))}</span>`}</p>
+          <div class="tags">${(o.genres.length ? o.genres.map(genre) : [t('all genres')]).map((g) => `<span class="tag">${esc(g)}</span>`).join('')}</div>
+          <p class="meta"><span>👥 ${esc(t('reach'))}: ${o.reach ? num(o.reach) : '—'}</span><span>📍 ${esc(country(o.country))}</span><span>🗣 ${esc(o.language || '—')}</span></p>
+          <p><a href="${esc(o.url)}" target="_blank" rel="noopener noreferrer nofollow">${esc(t('Open profile / playlist ↗'))}</a></p>
         </div>
         <div>
           <div class="panel">
-            <h3>Warunki współpracy</h3>
+            <h3>${esc(t('Collaboration terms'))}</h3>
             <p>${modelBadge(o.collaboration)}</p>
             <p class="muted">${esc(m.description)}</p>
             ${o.collaboration.terms ? `<p>${esc(o.collaboration.terms)}</p>` : ''}
-            <p class="muted small">Termin odpowiedzi: ${esc(o.responseDays || 7)} dni. Po tym czasie zgłoszenie wygasa automatycznie.</p>
+            <p class="muted small">${esc(t('Response deadline: {n} days. After that the submission expires automatically.', { n: o.responseDays || 7 }))}</p>
           </div>
           <div class="stats">
-            <div class="stat"><b>${st.acceptanceRate ?? '—'}${st.acceptanceRate !== null ? '%' : ''}</b><span>akceptacji</span></div>
-            <div class="stat"><b>${st.responseRate ?? '—'}${st.responseRate !== null ? '%' : ''}</b><span>odpowiedzi w terminie</span></div>
-            <div class="stat"><b>${st.avgResponseHours !== null ? `${st.avgResponseHours} h` : '—'}</b><span>śr. czas reakcji</span></div>
-            <div class="stat"><b>${num(st.placed)}</b><span>umieszczonych</span></div>
+            <div class="stat"><b>${pct(st.acceptanceRate)}</b><span>${esc(t('accepted'))}</span></div>
+            <div class="stat"><b>${pct(st.responseRate)}</b><span>${esc(t('answered on time'))}</span></div>
+            <div class="stat"><b>${st.avgResponseHours !== null ? `${st.avgResponseHours} h` : '—'}</b><span>${esc(t('avg. reaction time'))}</span></div>
+            <div class="stat"><b>${num(st.placed)}</b><span>${esc(t('placements'))}</span></div>
           </div>
           ${o.acceptsSubmissions
-            ? `<button class="btn primary" data-cart="${esc(o.id)}">${cart.has(o.id) ? '✓ W zgłoszeniu' : '+ Dodaj do zgłoszenia'}</button> <a class="btn" href="#/wyslij">Wyślij →</a>`
-            : '<p class="muted">Obecnie nie przyjmuje zgłoszeń.</p>'}
+            ? `<button class="btn primary" data-cart="${esc(o.id)}">${cart.has(o.id) ? `✓ ${esc(t('In submission'))}` : `+ ${esc(t('Add to submission'))}`}</button> <a class="btn" href="#/send">${esc(t('Send →'))}</a>`
+            : `<p class="muted">${esc(t('Not accepting submissions right now.'))}</p>`}
         </div>
       </div>`;
     bindCartButtons(app, () => viewOutlet(id));
@@ -337,39 +373,39 @@
     const profile = storage.get('artistProfile', {});
     const hasKey = Boolean(storage.get('artistKey'));
     if (!outlets.length) {
-      app.innerHTML = `<h1>Wyślij utwór</h1><div class="empty">Nie wybrano żadnych miejsc.<br><br><a class="btn primary" href="#/dopasuj">Dopasuj miejsca</a> <a class="btn" href="#/katalog">Przeglądaj katalog</a></div>`;
+      app.innerHTML = `<h1>${esc(t('Send your work'))}</h1><div class="empty">${esc(t('No outlets selected.'))}<br><br><a class="btn primary" href="#/match">${esc(t('Match outlets'))}</a> <a class="btn" href="#/catalog">${esc(t('Browse the catalog'))}</a></div>`;
       return;
     }
     const fees = outlets.filter((o) => o.collaboration.model === 'fee').reduce((a, o) => a + o.collaboration.feePLN, 0);
     const ct = creator.get();
     const ci = creator.info(ct);
     app.innerHTML = `
-      <h1>Wyślij: ${esc(ci.work)}</h1>
+      <h1>${esc(t('Send: {work}', { work: ci.work }))}</h1>
       <div class="panel">
-        <h3>Wybrane miejsca (${outlets.length})</h3>
+        <h3>${esc(t('Selected outlets ({n})', { n: outlets.length }))}</h3>
         ${outlets.map((o) => `
           <div class="sub-head sub">
             <div><b>${esc(o.name)}</b> <span class="muted small">${esc(META.types[o.type])}</span><br><span class="muted small">${esc(o.collaboration.terms || META.models[o.collaboration.model].description)}</span></div>
-            <div>${modelBadge(o.collaboration)} <button class="btn small ghost" data-cart="${esc(o.id)}">Usuń</button></div>
+            <div>${modelBadge(o.collaboration)} <button class="btn small ghost" data-cart="${esc(o.id)}">${esc(t('Remove'))}</button></div>
           </div>`).join('')}
-        <p class="muted">Koszt z góry: <b>${pln(fees)}</b>${fees ? ' (opłaty za odsłuch)' : ''}. Prowizje naliczane są wyłącznie od przychodów z dzieła po jego umieszczeniu i tylko w okresie umowy.</p>
+        <p class="muted">${esc(t('Upfront cost:'))} <b>${money(fees)}</b>${fees ? ` ${esc(t('(review fees)'))}` : ''}. ${esc(t('Commissions apply only to revenue from the work after placement and only during the agreement.'))}</p>
       </div>
       <form class="form" id="sf">
         <div class="row">
-          <div class="field"><label>Artysta / zespół *</label><input name="artistName" required maxlength="120" value="${esc(profile.artistName)}"></div>
-          <div class="field"><label>E-mail *</label><input name="artistEmail" type="email" required value="${esc(profile.artistEmail)}"></div>
+          <div class="field"><label>${esc(t('Creator / band name'))} *</label><input name="artistName" required maxlength="120" value="${esc(profile.artistName)}"></div>
+          <div class="field"><label>${esc(t('E-mail'))} *</label><input name="artistEmail" type="email" required value="${esc(profile.artistEmail)}"></div>
         </div>
         <div class="row">
-          <div class="field"><label>Typ twórcy</label>${creatorSelect(ct)}</div>
-          <div class="field"><label>Gatunek</label><select name="genre">${genreOptions(ct, storage.get('matchGenre', ''), '—')}</select></div>
+          <div class="field"><label>${esc(t('Creator type'))}</label>${creatorSelect(ct)}</div>
+          <div class="field"><label>${esc(t('Genre'))}</label><select name="genre">${genreOptions(ct, storage.get('matchGenre', ''), '—')}</select></div>
         </div>
-        <div class="field"><label>Tytuł (${esc(ci.work)}) *</label><input name="trackTitle" required maxlength="160"></div>
-        <div class="field"><label>Link (${esc(ci.workUrlHint)}) *</label><input name="trackUrl" type="url" required placeholder="https://"></div>
-        <div class="field"><label>Data premiery</label><input name="releaseDate" type="date"></div>
-        <div class="field"><label>Wiadomość do kuratorów</label><textarea name="message" maxlength="2000" placeholder="Kilka zdań o utworze, inspiracjach i dotychczasowych sukcesach."></textarea></div>
-        <label class="check"><input type="checkbox" name="acceptTerms" required> Akceptuję warunki współpracy wybranych miejsc i zobowiązuję się rzetelnie raportować przychody w okresie umów prowizyjnych.</label>
-        ${hasKey ? '<label class="check"><input type="checkbox" name="useKey" checked> Dodaj do mojego istniejącego panelu artysty</label>' : ''}
-        <button class="btn primary" type="submit">Wyślij do ${outlets.length} ${outlets.length === 1 ? 'miejsca' : 'miejsc'}</button>
+        <div class="field"><label>${esc(t('Title ({work})', { work: ci.work }))} *</label><input name="trackTitle" required maxlength="160"></div>
+        <div class="field"><label>${esc(t('Link ({hint})', { hint: ci.workUrlHint }))} *</label><input name="trackUrl" type="url" required placeholder="https://"></div>
+        <div class="field"><label>${esc(t('Release date'))}</label><input name="releaseDate" type="date"></div>
+        <div class="field"><label>${esc(t('Message to curators'))}</label><textarea name="message" maxlength="2000" placeholder="${esc(t('A few sentences about the work, inspirations and past successes. {name} and {genres} are replaced for each curator.'))}"></textarea></div>
+        <label class="check"><input type="checkbox" name="acceptTerms" required> ${esc(t('I accept the collaboration terms of the selected outlets and will report revenue honestly during commission agreements.'))}</label>
+        ${hasKey ? `<label class="check"><input type="checkbox" name="useKey" checked> ${esc(t('Add to my existing creator panel'))}</label>` : ''}
+        <button class="btn primary" type="submit">${esc(t('Send to {n} outlets', { n: outlets.length }))}</button>
       </form>`;
     bindCartButtons(app, viewSubmit);
     app.querySelector('#sf [data-creator]').addEventListener('change', (e) => { creator.set(e.target.value); viewSubmit(); });
@@ -382,37 +418,22 @@
       storage.set('artistProfile', { artistName: d.artistName, artistEmail: d.artistEmail });
       cart.clear();
       app.innerHTML = `
-        <h1>Wysłano! 🎉</h1>
-        <div class="notice ok">Zgłoszenie trafiło do ${r.submissions.length} ${r.submissions.length === 1 ? 'miejsca' : 'miejsc'}.${r.skipped.length ? ` Pominięto: ${esc(r.skipped.map((s) => s.reason).join(' '))}` : ''}</div>
-        <div class="notice warn"><b>Zapisz swój klucz artysty.</b> To jedyny sposób dostępu do panelu z innego urządzenia:<br><br><span class="key">${esc(r.artistKey)}</span></div>
-        <a class="btn primary" href="#/artysta">Przejdź do panelu artysty</a>`;
+        <h1>${esc(t('Sent!'))} 🎉</h1>
+        <div class="notice ok">${esc(t('Your submission reached {n} outlets.', { n: r.submissions.length }))}${r.skipped.length ? ` ${esc(t('Skipped:'))} ${esc(r.skipped.map((s) => s.reason).join(' '))}` : ''}</div>
+        <div class="notice warn"><b>${esc(t('Save your creator key.'))}</b> ${esc(t('It is the only way to access your panel from another device:'))}<br><br><span class="key">${esc(r.artistKey)}</span></div>
+        <a class="btn primary" href="#/creator">${esc(t('Go to your creator panel'))}</a>`;
     });
   }
 
-  function statusBadge(s) {
-    return `<span class="status st-${esc(s)}">${esc(META.statuses[s] || s)}</span>`;
-  }
-
-  function revenueTable(sub, { curatorKey } = {}) {
-    if (!sub.revenue.length) return '<p class="muted small">Brak zgłoszonych przychodów.</p>';
-    return `<table class="rev"><thead><tr><th>Okres</th><th>Przychód</th><th>Prowizja</th><th>Status</th></tr></thead><tbody>
-      ${sub.revenue.map((r) => `<tr>
-        <td>${esc(r.period)}</td><td>${pln(r.amountPLN)}</td>
-        <td>${r.inAgreement ? `${pln(r.commissionPLN)}${r.poolSize > 1 ? ` <span class="muted small">(Pula: ${esc(r.effectiveRatePercent)}%, ${r.poolSize} kuratorów)</span>` : ''}` : '<span class="muted">poza umową</span>'}</td>
-        <td>${r.commissionPLN ? (r.paid ? '<span class="yes">opłacona</span>' : (curatorKey ? `<button class="btn small" data-paid="${esc(sub.id)}|${esc(r.id)}">Potwierdź wpłatę</button>` : 'do zapłaty')) : '—'}</td>
-      </tr>`).join('')}
-    </tbody></table>`;
-  }
-
-  // ---------- kalendarz (.ics) ----------
+  // ---------- calendar (.ics) ----------
   function downloadIcs(campaign) {
     const d = (iso) => iso.replace(/-/g, '');
-    const escIcs = (t) => String(t).replace(/[\;,]/g, (c) => `\\${c}`).replace(/\n/g, '\\n');
+    const escIcs = (s) => String(s).replace(/[\\;,]/g, (c) => `\\${c}`).replace(/\n/g, '\\n');
     const events = [
-      ...campaign.waves.map((w, i) => ({ uid: `${campaign.id}-w${i}`, date: w.date, title: `${w.name} (${w.outlets.length} miejsc)`, desc: w.how })),
-      ...campaign.tasks.map((t) => ({ uid: `${campaign.id}-${t.id}`, date: t.date, title: t.name, desc: `${t.how} ${t.url}` })),
+      ...campaign.waves.map((w, i) => ({ uid: `${campaign.id}-w${i}`, date: w.date, title: `${w.name} (${w.outlets.length})`, desc: w.how })),
+      ...campaign.tasks.map((x) => ({ uid: `${campaign.id}-${x.id}`, date: x.date, title: x.name, desc: `${x.how} ${x.url || ''}` })),
     ];
-    const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Promo Hub//Kampania//PL', 'CALSCALE:GREGORIAN'];
+    const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Promo Hub//Campaign//EN', 'CALSCALE:GREGORIAN'];
     const stamp = `${new Date().toISOString().replace(/[-:]/g, '').slice(0, 15)}Z`;
     for (const e of events) {
       const next = new Date(Date.parse(`${e.date}T00:00:00Z`) + 864e5).toISOString().slice(0, 10);
@@ -422,39 +443,42 @@
     lines.push('END:VCALENDAR');
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([lines.join('\r\n')], { type: 'text/calendar' }));
-    a.download = `kampania-${campaign.trackTitle.replace(/[^\w-]+/g, '_')}.ics`;
+    a.download = `campaign-${campaign.trackTitle.replace(/[^\w-]+/g, '_')}.ics`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   }
 
-  // ---------- generator pitchu ----------
+  // ---------- pitch generator ----------
   function generatePitch(d, profile) {
-    const genre = d.genre || 'mój gatunek';
+    const params = {
+      artist: d.artistName || t('[creator]'),
+      title: d.trackTitle || t('[title]'),
+      genre: d.genre ? genre(d.genre) : t('my genre'),
+      date: d.releaseDate ? new Date(`${d.releaseDate}T00:00:00Z`).toLocaleDateString(locale()) : '',
+    };
+    const when = params.date ? ` ${t('Release: {date}.', params)}` : '';
+    const about = profile && profile.achievements ? `\n\n${t('About me:')} ${profile.achievements}` : '';
     if (d.creatorType === 'writer') {
-      const whenW = d.releaseDate ? ` Premiera: ${new Date(`${d.releaseDate}T00:00:00Z`).toLocaleDateString('pl-PL')}.` : '';
-      const achW = profile && profile.achievements ? `\n\nO mnie: ${profile.achievements}` : '';
-      return `Dzień dobry {nazwa}!\n\nNazywam się ${d.artistName || '[autor]'} i piszę (${genre}). Śledzę Państwa recenzje i polecenia ({gatunki}) i myślę, że moja książka „${d.trackTitle || '[tytuł]'}” może zainteresować Państwa odbiorców.${whenW} Chętnie prześlę egzemplarz recenzencki (e-book lub papier).${achW}\n\nDziękuję za uwagę i pozdrawiam serdecznie!`;
+      return `${t('Hello {name}!')}\n\n${t('My name is {artist} and I write {genre}. I follow your reviews and recommendations ({genres}) and I think my book “{title}” could interest your audience.', params)}${when} ${t('I would be happy to send a review copy (e-book or print).')}${about}\n\n${t('Thank you for your time and best regards!')}`;
     }
-    const when = d.releaseDate ? ` Premiera: ${new Date(`${d.releaseDate}T00:00:00Z`).toLocaleDateString('pl-PL')}.` : '';
-    const ach = profile && profile.achievements ? `\n\nDotychczas: ${profile.achievements}` : '';
-    return `Cześć {nazwa}!\n\nJestem ${d.artistName || '[artysta]'} i tworzę ${genre}. Śledzę Twoje wybory ({gatunki}) i myślę, że „${d.trackTitle || '[tytuł]'}” pasuje do tego, co prezentujesz.${when}${ach}\n\nDzięki za odsłuch – każdy feedback jest dla mnie cenny!`;
+    return `${t('Hi {name}!')}\n\n${t('I’m {artist} and I make {genre}. I follow your picks ({genres}) and I think “{title}” fits what you feature.', params)}${when}${about}\n\n${t('Thanks for listening – every piece of feedback means a lot!')}`;
   }
 
   function simulationView(sim) {
     if (!sim || !sim.runs) return '';
     return `
       <div class="panel sim">
-        <h3>🎲 Symulator kampanii <span class="muted small">${num(sim.runs)} symulacji Monte Carlo na realnych wskaźnikach kuratorów</span></h3>
+        <h3>🎲 ${esc(t('Campaign Simulator'))} <span class="muted small">${esc(t('{n} Monte Carlo runs on real curator metrics', { n: num(sim.runs) }))}</span></h3>
         <div class="sim-grid">
-          <div><span class="muted small">Scenariusz ostrożny (p10)</span><b>${num(sim.placements.p10)} umieszczeń</b><span class="muted small">zasięg ${num(sim.reach.p10)}</span></div>
-          <div class="sim-mid"><span class="muted small">Najbardziej prawdopodobny (p50)</span><b>${num(sim.placements.p50)} umieszczeń</b><span class="muted small">zasięg ${num(sim.reach.p50)}</span></div>
-          <div><span class="muted small">Optymistyczny (p90)</span><b>${num(sim.placements.p90)} umieszczeń</b><span class="muted small">zasięg ${num(sim.reach.p90)}</span></div>
+          <div><span class="muted small">${esc(t('Cautious scenario (p10)'))}</span><b>${esc(t('{n} placements', { n: num(sim.placements.p10) }))}</b><span class="muted small">${esc(t('reach'))} ${num(sim.reach.p10)}</span></div>
+          <div class="sim-mid"><span class="muted small">${esc(t('Most likely (p50)'))}</span><b>${esc(t('{n} placements', { n: num(sim.placements.p50) }))}</b><span class="muted small">${esc(t('reach'))} ${num(sim.reach.p50)}</span></div>
+          <div><span class="muted small">${esc(t('Optimistic (p90)'))}</span><b>${esc(t('{n} placements', { n: num(sim.placements.p90) }))}</b><span class="muted small">${esc(t('reach'))} ${num(sim.reach.p90)}</span></div>
         </div>
         <div class="tags">
-          <span class="tag">min. 1 umieszczenie: ${sim.chance.atLeast1}%</span>
-          <span class="tag">min. 3: ${sim.chance.atLeast3}%</span>
-          <span class="tag">min. 5: ${sim.chance.atLeast5}%</span>
-          ${sim.levelUpChance !== null && sim.levelUpChance !== undefined ? `<span class="tag tag-ok">szansa awansu na poziom „${esc(sim.nextLevel || '')}”: ${sim.levelUpChance}%</span>` : ''}
+          <span class="tag">${esc(t('at least 1 placement: {n}%', { n: sim.chance.atLeast1 }))}</span>
+          <span class="tag">${esc(t('at least 3: {n}%', { n: sim.chance.atLeast3 }))}</span>
+          <span class="tag">${esc(t('at least 5: {n}%', { n: sim.chance.atLeast5 }))}</span>
+          ${sim.levelUpChance !== null && sim.levelUpChance !== undefined ? `<span class="tag tag-ok">${esc(t('chance to reach “{level}”: {n}%', { level: sim.nextLevel || '', n: sim.levelUpChance }))}</span>` : ''}
         </div>
       </div>`;
   }
@@ -464,40 +488,40 @@
     const phases = plan.phases || [];
     const items = [
       ...plan.waves.map((w, i) => ({ kind: 'wave', i, date: w.date, phase: w.phase || 'E', w })),
-      ...plan.tasks.map((t) => ({ kind: 'task', date: t.date, phase: t.phase || 'E', t })),
+      ...plan.tasks.map((x) => ({ kind: 'task', date: x.date, phase: x.phase || 'E', t: x })),
     ].sort((a, b) => a.phase.localeCompare(b.phase) || a.date.localeCompare(b.date));
     const byPhase = {};
     for (const e of items) (byPhase[e.phase] = byPhase[e.phase] || []).push(e);
-    const doneCount = plan.tasks.filter((t) => t.done).length;
+    const doneCount = plan.tasks.filter((x) => x.done).length;
     const item = (e) => (e.kind === 'wave' ? `
           <div class="tl tl-wave${e.w.domino ? ' tl-domino' : ''}${e.w.sent ? ' done' : ''}">
             <div class="tl-date">${esc(e.date)}</div>
             <div>
-              <b>${e.w.domino ? '🁢' : '🎼'} ${esc(e.w.name)}</b> ${e.w.sent ? '<span class="yes small">wysłana</span>' : (forCampaign ? `<button class="btn small" data-send="${e.i}">Wyślij teraz</button>` : '<span class="muted small">wyśle się automatycznie</span>')}
+              <b>${e.w.domino ? '🁢' : '🎼'} ${esc(e.w.name)}</b> ${e.w.sent ? `<span class="yes small">${esc(t('sent'))}</span>` : (forCampaign ? `<button class="btn small" data-send="${e.i}">${esc(t('Send now'))}</button>` : `<span class="muted small">${esc(t('sends automatically'))}</span>`)}
               <div class="muted small">${esc(e.w.how)}</div>
-              <div class="tags">${e.w.outlets.map((o) => `<a class="tag" href="#/miejsce/${esc(o.id)}">${esc(o.name)} · ${esc(META.models[o.model]?.label || '')}</a>`).join('')}</div>
+              <div class="tags">${e.w.outlets.map((o) => `<a class="tag" href="#/outlet/${esc(o.id)}">${esc(o.name)} · ${esc(META.models[o.model]?.label || '')}</a>`).join('')}</div>
             </div>
           </div>` : `
-          <div class="tl${e.t.done ? ' done' : ''}${e.t.group === 'Baza światowa' ? ' tl-entity' : ''}${!e.t.done && e.date < today && forCampaign ? ' late' : ''}">
-            <div class="tl-date">${esc(e.date)}${e.t.catchUp ? '<br><span class="small warn-text">do nadrobienia</span>' : ''}</div>
+          <div class="tl${e.t.done ? ' done' : ''}${e.t.id.startsWith('ent-') ? ' tl-entity' : ''}${!e.t.done && e.date < today && forCampaign ? ' late' : ''}">
+            <div class="tl-date">${esc(e.date)}${e.t.catchUp ? `<br><span class="small warn-text">${esc(t('catch up'))}</span>` : ''}</div>
             <div>
               ${forCampaign ? `<label class="check"><input type="checkbox" data-task="${esc(e.t.id)}" ${e.t.done ? 'checked' : ''}> <b>${esc(e.t.name)}</b></label>` : `<b>${esc(e.t.name)}</b>`}
-              <span class="tag">${esc(e.t.group)}</span>
-              <div class="muted small">${esc(e.t.how)} ${e.t.url ? `<a href="${esc(e.t.url)}" target="_blank" rel="noopener noreferrer nofollow">otwórz ↗</a>` : ''}</div>
+              <span class="tag">${esc(e.t.group)}</span>${e.t.country ? ` <span class="tag">📍 ${esc(country(e.t.country))}</span>` : ''}
+              <div class="muted small">${esc(e.t.how)} ${e.t.url ? `<a href="${esc(e.t.url)}" target="_blank" rel="noopener noreferrer nofollow">${esc(t('open ↗'))}</a>` : ''}</div>
             </div>
           </div>`);
     return `
       <div class="stats">
-        <div class="stat"><b>${plan.waves.reduce((a, w) => a + w.outlets.length, 0)}</b><span>miejsc w ${plan.waves.length} falach</span></div>
-        <div class="stat"><b>${(plan.sections || []).length}</b><span>sekcji orkiestry</span></div>
-        <div class="stat"><b>${plan.tasks.length}</b><span>zadań Planu A–Z${forCampaign ? ` (zrobione: ${doneCount})` : ''}</span></div>
-        <div class="stat"><b>~${num(plan.forecast.reach)}</b><span>oczekiwany zasięg</span></div>
-        <div class="stat"><b>${pln(plan.spentPLN)}</b><span>koszt z góry</span></div>
+        <div class="stat"><b>${plan.waves.reduce((a, w) => a + w.outlets.length, 0)}</b><span>${esc(t('outlets in {n} waves', { n: plan.waves.length }))}</span></div>
+        <div class="stat"><b>${(plan.sections || []).length}</b><span>${esc(t('orchestra sections'))}</span></div>
+        <div class="stat"><b>${plan.tasks.length}</b><span>${esc(t('A–Z tasks'))}${forCampaign ? ` (${esc(t('done: {n}', { n: doneCount }))})` : ''}</span></div>
+        <div class="stat"><b>~${num(plan.forecast.reach)}</b><span>${esc(t('expected reach'))}</span></div>
+        <div class="stat"><b>${money(plan.spentPLN)}</b><span>${esc(t('upfront cost'))}</span></div>
       </div>
       ${simulationView(plan.simulation)}
-      ${(phases.length ? phases : [{ id: 'E', name: 'Plan', goal: '' }]).filter((ph) => byPhase[ph.id]).map((ph) => `
+      ${(phases.length ? phases : [{ id: 'E', name: t('Plan'), goal: '' }]).filter((ph) => byPhase[ph.id]).map((ph) => `
         <details class="phase" ${forCampaign ? '' : 'open'}>
-          <summary><span class="phase-id">${esc(ph.id)}</span> <b>${esc(ph.name)}</b> <span class="muted small">${esc(ph.goal)} · ${byPhase[ph.id].length} pozycji</span></summary>
+          <summary><span class="phase-id">${esc(ph.id)}</span> <b>${esc(ph.name)}</b> <span class="muted small">${esc(ph.goal)} · ${esc(t('{n} items', { n: byPhase[ph.id].length }))}</span></summary>
           <div class="timeline">${byPhase[ph.id].map(item).join('')}</div>
         </details>`).join('')}`;
   }
@@ -513,29 +537,29 @@
     const releaseDefault = new Date(Date.now() + (ct === 'writer' ? 70 : 42) * 864e5).toISOString().slice(0, 10);
     const savedGenre = storage.get('matchGenre', '') || (p.genres || [])[0] || '';
     app.innerHTML = `
-      <h1>🎼 Master Dyrygent</h1>
-      <p class="lead muted">Jeden formularz, cała orkiestra od A do Z: dobór najlepszych miejsc w ramach budżetu, plan 45–60 zadań w 9 fazach (od fundamentu po skalowanie), oficjalne kanały, Światowa Baza Podmiotów, symulacja wyników i automatyczna wysyłka zgłoszeń falami w optymalnym momencie.</p>
+      <h1>🎼 ${esc(t('Master Conductor'))}</h1>
+      <p class="lead muted">${esc(t('One form, the whole orchestra from A to Z: the best outlets within your budget, a plan of 45–60 tasks in 9 phases (from foundation to scaling), official channels, the Global Database, an outcome simulation and automatic submission waves at the best moment.'))}</p>
       <form class="form" id="cf">
-        <div class="field"><label>Kim jesteś?</label>${creatorSelect(ct)}</div>
+        <div class="field"><label>${esc(t('Who are you?'))}</label>${creatorSelect(ct)}</div>
         <div class="row">
-          <div class="field"><label>Artysta *</label><input name="artistName" required value="${esc(p.name || profile.artistName)}"></div>
-          <div class="field"><label>E-mail *</label><input name="artistEmail" type="email" required value="${esc(p.contactEmail || profile.artistEmail)}"></div>
+          <div class="field"><label>${esc(t('Creator name'))} *</label><input name="artistName" required value="${esc(p.name || profile.artistName)}"></div>
+          <div class="field"><label>${esc(t('E-mail'))} *</label><input name="artistEmail" type="email" required value="${esc(p.contactEmail || profile.artistEmail)}"></div>
         </div>
         <div class="row">
-          <div class="field"><label>Tytuł (${esc(ci.work)}) *</label><input name="trackTitle" required maxlength="160"></div>
-          <div class="field"><label>Gatunek *</label><select name="genre" required>${genreOptions(ct, ci.genres.includes(savedGenre) ? savedGenre : '', 'Wybierz')}</select></div>
+          <div class="field"><label>${esc(t('Title ({work})', { work: ci.work }))} *</label><input name="trackTitle" required maxlength="160"></div>
+          <div class="field"><label>${esc(t('Genre'))} *</label><select name="genre" required>${genreOptions(ct, ci.genres.includes(savedGenre) ? savedGenre : '', t('Choose'))}</select></div>
         </div>
-        <div class="field"><label>Link (${esc(ci.workUrlHint)}) *</label><input name="trackUrl" type="url" required placeholder="https://"></div>
+        <div class="field"><label>${esc(t('Link ({hint})', { hint: ci.workUrlHint }))} *</label><input name="trackUrl" type="url" required placeholder="https://"></div>
         <div class="row">
-          <div class="field"><label>Data premiery *</label><input name="releaseDate" type="date" required value="${releaseDefault}"><div class="hint">${ct === 'writer' ? 'Najlepiej 10 tygodni od dziś – zdążysz z egzemplarzami recenzenckimi.' : 'Najlepiej 6 tygodni od dziś – zdążysz z radiem i pitchem redakcyjnym.'} Zadania po terminie trafią na listę „do nadrobienia”.</div></div>
-          <div class="field"><label>Budżet na opłaty za odsłuch (zł)</label><input name="budgetPLN" type="number" min="0" step="1" value="0"><div class="hint">0 zł = tylko prowizja, bezpłatne i barter. Płacisz za efekt.</div></div>
+          <div class="field"><label>${esc(t('Release date'))} *</label><input name="releaseDate" type="date" required value="${releaseDefault}"><div class="hint">${esc(ct === 'writer' ? t('Ideally 10 weeks from today – enough time for review copies.') : t('Ideally 6 weeks from today – enough time for radio and editorial pitching.'))} ${esc(t('Overdue tasks go to “catch up”.'))}</div></div>
+          <div class="field"><label>${esc(t('Budget for review fees (PLN)'))}</label><input name="budgetPLN" type="number" min="0" step="1" value="0"><div class="hint">${esc(t('0 = commission, free and barter outlets only. You pay for results.'))}</div></div>
         </div>
-        <div class="field"><label>Pitch do kuratorów <button class="btn small ghost" type="button" id="genPitch">✨ Wygeneruj</button></label>
-          <textarea name="message" maxlength="2000" rows="7" placeholder="{nazwa} i {gatunki} zostaną podmienione dla każdego kuratora."></textarea></div>
-        <div class="cta-row"><button class="btn" type="button" id="previewBtn">🎲 Pokaż plan A–Z i symulację</button></div>
+        <div class="field"><label>${esc(t('Pitch to curators'))} <button class="btn small ghost" type="button" id="genPitch">✨ ${esc(t('Generate'))}</button></label>
+          <textarea name="message" maxlength="2000" rows="7" placeholder="${esc(t('{name} and {genres} are replaced for each curator.'))}"></textarea></div>
+        <div class="cta-row"><button class="btn" type="button" id="previewBtn">🎲 ${esc(t('Show the A–Z plan and simulation'))}</button></div>
         <div id="plan"></div>
-        <label class="check"><input type="checkbox" name="acceptTerms" required> Akceptuję warunki współpracy miejsc z planu i zobowiązuję się raportować przychody w okresie umów prowizyjnych.</label>
-        <button class="btn primary" type="submit">🚀 Uruchom kampanię</button>
+        <label class="check"><input type="checkbox" name="acceptTerms" required> ${esc(t('I accept the collaboration terms of the outlets in the plan and will report revenue during commission agreements.'))}</label>
+        <button class="btn primary" type="submit">🚀 ${esc(t('Launch campaign'))}</button>
       </form>`;
     const form = document.getElementById('cf');
     form.querySelector('[data-creator]').addEventListener('change', (e) => { creator.set(e.target.value); viewCampaign(); });
@@ -544,11 +568,11 @@
     });
     const preview = async () => {
       const d = formData(form);
-      if (!d.genre) throw new Error('Wybierz gatunek.');
+      if (!d.genre) throw new Error(t('Choose a genre.'));
       const plan = await api('POST', '/api/campaigns/preview', { creatorType: d.creatorType, genre: d.genre, releaseDate: d.releaseDate, budgetPLN: d.budgetPLN }, key ? { 'x-artist-key': key } : {});
       document.getElementById('plan').innerHTML = plan.waves.length
-        ? `<div class="panel"><h2>Plan kampanii A–Z</h2>${planView(plan)}</div>`
-        : '<div class="notice warn">Brak pasujących miejsc – zmień gatunek lub zwiększ budżet.</div>';
+        ? `<div class="panel"><h2>${esc(t('A–Z campaign plan'))}</h2>${planView(plan)}</div>`
+        : `<div class="notice warn">${esc(t('No matching outlets – change the genre or raise the budget.'))}</div>`;
     };
     document.getElementById('previewBtn').addEventListener('click', () => preview().catch((e) => toast(e.message, true)));
     onSubmit(form, async (d) => {
@@ -558,11 +582,12 @@
       const r = await api('POST', '/api/campaigns', body);
       storage.set('artistKey', r.artistKey);
       storage.set('artistProfile', { artistName: d.artistName, artistEmail: d.artistEmail });
+      const sent = r.campaign.results.sent;
       app.innerHTML = `
-        <h1>Kampania wystartowała! 🎼</h1>
-        <div class="notice ok">„${esc(r.campaign.trackTitle)}”: ${r.campaign.waves.length} fal, ${r.campaign.waves.reduce((a, w) => a + w.outlets.length, 0)} miejsc. ${r.campaign.results.sent ? `Pierwsze ${r.campaign.results.sent} zgłoszeń już wysłane.` : 'Pierwsza fala wyjdzie automatycznie w zaplanowanym terminie.'}</div>
-        ${key ? '' : `<div class="notice warn"><b>Zapisz swój klucz artysty</b> – to dostęp do panelu z innego urządzenia:<br><br><span class="key">${esc(r.artistKey)}</span></div>`}
-        <div class="cta-row"><a class="btn primary" href="#/artysta">Przejdź do panelu</a><button class="btn" id="ics">📅 Dodaj do kalendarza</button></div>`;
+        <h1>${esc(t('Your campaign is live!'))} 🎼</h1>
+        <div class="notice ok">“${esc(r.campaign.trackTitle)}”: ${esc(t('{w} waves, {o} outlets.', { w: r.campaign.waves.length, o: r.campaign.waves.reduce((a, w) => a + w.outlets.length, 0) }))} ${esc(sent ? t('The first {n} submissions are already sent.', { n: sent }) : t('The first wave goes out automatically on its date.'))}</div>
+        ${key ? '' : `<div class="notice warn"><b>${esc(t('Save your creator key'))}</b> – ${esc(t('it gives access to your panel from another device:'))}<br><br><span class="key">${esc(r.artistKey)}</span></div>`}
+        <div class="cta-row"><a class="btn primary" href="#/creator">${esc(t('Go to your panel'))}</a><button class="btn" id="ics">📅 ${esc(t('Add to calendar'))}</button></div>`;
       document.getElementById('ics').addEventListener('click', () => downloadIcs(r.campaign));
     });
   }
@@ -572,74 +597,76 @@
     const groups = {};
     for (const c of META.channels.filter((x) => x.for.includes(ct))) (groups[c.group] = groups[c.group] || []).push(c);
     const { entities } = await api('GET', `/api/entities?creator=${encodeURIComponent(ct)}`);
+    const when = (c) => (c.offsetDays < 0 ? t('{n} days before release', { n: -c.offsetDays }) : c.offsetDays === 0 ? t('on release day') : t('{n} days after release', { n: c.offsetDays }));
     app.innerHTML = `
-      <h1>Kanały promocji</h1>
-      <p class="muted">Darmowe narzędzia platform i zweryfikowane podmioty ze Światowej Bazy, z których korzystasz równolegle z kampanią. Master Dyrygent wpisuje je automatycznie do Twojego Planu A–Z. Zasady platform się zmieniają – zawsze sprawdź u źródła.</p>
+      <h1>${esc(t('Promotion channels'))}</h1>
+      <p class="muted">${esc(t('Free official platform tools and verified entities from the Global Database to use alongside your campaign. The Master Conductor adds them to your A–Z plan automatically. Platform rules change – always check at the source.'))}</p>
       <div class="filters single">${creatorSelect(ct)}</div>
       ${Object.entries(groups).map(([g, list]) => `
         <h2>${esc(g)}</h2>
         <div class="grid">${list.map((c) => `
           <div class="card">
-            <div class="card-head"><h3>${esc(c.name)}</h3><span class="model model-${c.cost === 'free' ? 'free' : 'fee'}">${c.cost === 'free' ? '0 zł' : 'płatne'}</span></div>
-            <div class="meta"><span>📍 ${esc(c.region)}</span><span>⚡ wpływ ${'●'.repeat(c.impact)}${'○'.repeat(5 - c.impact)}</span><span>⏱ ${c.offsetDays < 0 ? `${-c.offsetDays} dni przed premierą` : c.offsetDays === 0 ? 'w dniu premiery' : `${c.offsetDays} dni po premierze`}</span></div>
+            <div class="card-head"><h3>${esc(c.name)}</h3><span class="model model-${c.cost === 'free' ? 'free' : 'fee'}">${esc(c.cost === 'free' ? t('free') : t('paid'))}</span></div>
+            <div class="meta"><span>📍 ${esc(c.region)}</span><span>⚡ ${esc(t('impact'))} ${'●'.repeat(c.impact)}${'○'.repeat(5 - c.impact)}</span><span>⏱ ${esc(when(c))}</span></div>
             <p class="muted">${esc(c.how)}</p>
-            <div class="actions"><a class="btn small ghost" href="${esc(c.url)}" target="_blank" rel="noopener noreferrer">Otwórz ↗</a></div>
+            <div class="actions"><a class="btn small ghost" href="${esc(c.url)}" target="_blank" rel="noopener noreferrer">${esc(t('Open ↗'))}</a></div>
           </div>`).join('')}</div>`).join('')}
-      <h2>🌍 Światowa Baza – zweryfikowane podmioty (${entities.length})</h2>
+      <h2>🌍 ${esc(t('Global Database – verified entities ({n})', { n: entities.length }))}</h2>
       ${entities.length ? `<div class="grid">${entities.map((e) => `
         <div class="card">
           <div class="card-head"><h3>${esc(e.name)}</h3><span class="tag">${esc(META.submissionModes[e.submission] || e.submission)}</span></div>
-          <div class="meta"><span>${esc(META.entityKinds[e.kind] || e.kind)}</span><span>📍 ${esc(e.country)}</span></div>
-          <p class="muted">${esc(e.notes)}</p>
-          <div class="actions"><a class="btn small ghost" href="${esc(e.url)}" target="_blank" rel="noopener noreferrer nofollow">Otwórz ↗</a></div>
-        </div>`).join('')}</div>` : '<p class="muted">Administrator weryfikuje kolejne podmioty – pojawią się tutaj i w Twoim Planie A–Z.</p>'}`;
+          <div class="meta"><span>${esc(META.entityKinds[e.kind] || e.kind)}</span><span>📍 ${esc(country(e.country))}</span><span>${esc(t('level {n}+', { n: e.tier || 1 }))}</span></div>
+          <p class="muted">${esc(e.note || '')}</p>
+          <div class="actions"><a class="btn small ghost" href="${esc(e.url)}" target="_blank" rel="noopener noreferrer nofollow">${esc(t('Open ↗'))}</a></div>
+        </div>`).join('')}</div>` : `<p class="muted">${esc(t('The admin is verifying more entities – they will appear here and in your A–Z plan.'))}</p>`}`;
     app.querySelector('[data-creator]').addEventListener('change', (e) => { creator.set(e.target.value); viewChannels(); });
-  }
-
-  // ---------- Autopilot kariery ----------
-  function autopilotView(ap) {
-    if (!ap || !ap.actions.length) return '';
-    const icon = { profile: '👤', campaign: '🎼', task: '✅', revenue: '💰', feedback: '💬', level: '📈', entity: '🌍' };
-    return `
-      <div class="panel autopilot">
-        <h2>🧭 Autopilot – Twoje następne ruchy</h2>
-        <p class="muted small">Uszeregowane według wpływu na karierę: kampanie, Plan A–Z, rozliczenia, profil, cele poziomu i Światowa Baza.</p>
-        <ol class="actions-list">${ap.actions.map((a) => `
-          <li>
-            <div class="sub-head"><b>${icon[a.kind] || '•'} ${esc(a.title)}</b>
-              <span>${a.taskId ? `<button class="btn small" data-ap-done="${esc(a.campaignId)}|${esc(a.taskId)}">Zrobione</button>` : ''}
-              ${a.url ? `<a class="btn small ghost" href="${esc(a.url)}" target="_blank" rel="noopener noreferrer nofollow">Otwórz ↗</a>` : ''}
-              ${a.link ? `<a class="btn small ghost" href="${esc(a.link)}">Przejdź →</a>` : ''}</span></div>
-            <div class="muted small">${esc(a.why || '')}</div>
-            ${a.suggestions && a.suggestions.length ? `<div class="tags">${a.suggestions.map((o) => `<a class="tag" href="#/miejsce/${esc(o.id)}">${esc(o.name)}${o.country ? ` · ${esc(o.country)}` : ''}</a>`).join('')}</div>` : ''}
-          </li>`).join('')}</ol>
-      </div>`;
   }
 
   async function viewEpk(slug) {
     const d = await api('GET', `/api/artists/${encodeURIComponent(slug)}`);
     const p = d.profile;
-    const linkNames = { spotify: 'Spotify', youtube: 'YouTube', instagram: 'Instagram', tiktok: 'TikTok', soundcloud: 'SoundCloud', website: 'Strona' };
+    const linkNames = { spotify: 'Spotify', youtube: 'YouTube', instagram: 'Instagram', tiktok: 'TikTok', soundcloud: 'SoundCloud', website: t('Website') };
+    const bio = LANG === 'en' && p.bioEn ? p.bioEn : p.bio;
     app.innerHTML = `
       <div class="epk">
         ${p.photoUrl ? `<img class="epk-photo" src="${esc(p.photoUrl)}" alt="${esc(p.name)}" referrerpolicy="no-referrer">` : '<div class="epk-photo placeholder">♪</div>'}
         <div>
-          <div class="muted">Press kit · Promo Hub</div>
+          <div class="muted">${esc(t('Press kit · Promo Hub'))}</div>
           <h1>${esc(p.name)}</h1>
-          <p><span class="level">Poziom ${d.level}: ${esc(d.levelName)}</span> ${p.city || p.country ? `<span class="muted">📍 ${esc([p.city, p.country].filter(Boolean).join(', '))}</span>` : ''}</p>
-          <div class="tags">${(p.genres || []).map((g) => `<span class="tag">${esc(g)}</span>`).join('')}</div>
+          <p><span class="level">${esc(t('Level {n}: {name}', { n: d.level, name: d.levelName }))}</span> ${p.city || p.country ? `<span class="muted">📍 ${esc([p.city, p.country].filter(Boolean).join(', '))}</span>` : ''}</p>
+          <div class="tags">${(p.genres || []).map((g) => `<span class="tag">${esc(genre(g))}</span>`).join('')}</div>
           <p class="cta-row">${Object.entries(p.links || {}).filter(([, u]) => u).map(([k, u]) => `<a class="btn small" href="${esc(u)}" target="_blank" rel="noopener noreferrer nofollow">${esc(linkNames[k] || k)} ↗</a>`).join('')}</p>
         </div>
       </div>
       <div class="stats">
-        <div class="stat"><b>${num(d.metrics.placements)}</b><span>umieszczeń</span></div>
-        <div class="stat"><b>${num(d.metrics.reach)}</b><span>zasięg umieszczeń</span></div>
-        <div class="stat"><b>${num(d.metrics.countries)}</b><span>krajów</span></div>
-        <div class="stat"><b>${num(d.metrics.listeners)}</b><span>słuchaczy / mies.</span></div>
+        <div class="stat"><b>${num(d.metrics.placements)}</b><span>${esc(t('placements'))}</span></div>
+        <div class="stat"><b>${num(d.metrics.reach)}</b><span>${esc(t('placement reach'))}</span></div>
+        <div class="stat"><b>${num(d.metrics.countries)}</b><span>${esc(t('countries'))}</span></div>
+        <div class="stat"><b>${num(d.metrics.listeners)}</b><span>${esc(t('listeners / readers per month'))}</span></div>
       </div>
       <div class="split">
-        <div class="panel"><h2>Bio</h2><p>${esc(p.bio) || '<span class="muted">—</span>'}</p>${p.bioEn ? `<h3>English</h3><p>${esc(p.bioEn)}</p>` : ''}${p.achievements ? `<h3>Osiągnięcia</h3><p>${esc(p.achievements)}</p>` : ''}</div>
-        <div class="panel"><h2>Gdzie grano</h2>${d.placements.length ? d.placements.map((x) => `<p><b>${esc(x.trackTitle)}</b> → ${esc(x.outletName)} <span class="muted small">${esc(META.types[x.outletType] || '')}${x.country ? ` · ${esc(x.country)}` : ''}</span>${x.placementUrl ? ` <a href="${esc(x.placementUrl)}" target="_blank" rel="noopener noreferrer nofollow">↗</a>` : ''}</p>`).join('') : '<p class="muted">Pierwsze umieszczenia w drodze.</p>'}</div>
+        <div class="panel"><h2>${esc(t('Bio'))}</h2><p>${bio ? esc(bio) : '<span class="muted">—</span>'}</p>${p.achievements ? `<h3>${esc(t('Achievements'))}</h3><p>${esc(p.achievements)}</p>` : ''}</div>
+        <div class="panel"><h2>${esc(t('Featured by'))}</h2>${d.placements.length ? d.placements.map((x) => `<p><b>${esc(x.trackTitle)}</b> → ${esc(x.outletName)} <span class="muted small">${esc(META.types[x.outletType] || '')}${x.country ? ` · ${esc(country(x.country))}` : ''}</span>${x.placementUrl ? ` <a href="${esc(x.placementUrl)}" target="_blank" rel="noopener noreferrer nofollow">↗</a>` : ''}</p>`).join('') : `<p class="muted">${esc(t('First placements on the way.'))}</p>`}</div>
+      </div>`;
+  }
+
+  // ---------- creator panel ----------
+  function autopilotView(ap) {
+    if (!ap || !ap.actions.length) return '';
+    const icon = { profile: '👤', campaign: '🎼', task: '✅', revenue: '💰', feedback: '💬', level: '📈', entity: '🌍' };
+    return `
+      <div class="panel autopilot">
+        <h2>🧭 ${esc(t('Autopilot – your next moves'))}</h2>
+        <p class="muted small">${esc(t('Ranked by impact on your career: campaigns, A–Z plan, settlements, profile, level goals and the Global Database.'))}</p>
+        <ol class="actions-list">${ap.actions.map((a) => `
+          <li>
+            <div class="sub-head"><b>${icon[a.kind] || '•'} ${esc(a.title)}</b>
+              <span>${a.taskId ? `<button class="btn small" data-ap-done="${esc(a.campaignId)}|${esc(a.taskId)}">${esc(t('Done'))}</button>` : ''}
+              ${a.url ? `<a class="btn small ghost" href="${esc(a.url)}" target="_blank" rel="noopener noreferrer nofollow">${esc(t('Open ↗'))}</a>` : ''}
+              ${a.link ? `<a class="btn small ghost" href="${esc(a.link)}">${esc(t('Go →'))}</a>` : ''}</span></div>
+            <div class="muted small">${esc(a.why || '')}</div>
+            ${a.suggestions && a.suggestions.length ? `<div class="tags">${a.suggestions.map((o) => `<a class="tag" href="#/outlet/${esc(o.id)}">${esc(o.name)}${o.country ? ` · ${esc(country(o.country))}` : ''}</a>`).join('')}</div>` : ''}
+          </li>`).join('')}</ol>
       </div>`;
   }
 
@@ -648,66 +675,68 @@
     return `
       <div class="panel career">
         <div class="levels">${career.levels.map((l) => `<div class="lvl${l.level === career.level ? ' current' : ''}${l.level < career.level ? ' passed' : ''}"><b>${l.level}</b><span>${esc(l.name)}</span></div>`).join('')}</div>
-        <h2>Jesteś na poziomie ${career.level}: ${esc(career.name)}</h2>
+        <h2>${esc(t('You are at level {n}: {name}', { n: career.level, name: career.name }))}</h2>
         ${n ? `
-          <p class="muted">Cel poziomu ${n.level} (${esc(n.name)}): ${esc(n.goal)}</p>
+          <p class="muted">${esc(t('Goal for level {n} ({name}): {goal}', { n: n.level, name: n.name, goal: n.goal }))}</p>
           <div class="score"><span>${n.percent}%</span><progress max="100" value="${n.percent}"></progress></div>
           <div class="tags">${n.progress.map((x) => `<span class="tag${x.done ? ' tag-ok' : ''}">${x.done ? '✓' : '○'} ${esc(x.label)}: ${num(x.value)} / ${num(x.target)}</span>`).join('')}</div>`
-        : '<p class="yes">Najwyższy poziom – teraz utrzymaj rytm i otwieraj kolejne rynki.</p>'}
-        <h3>Następne kroki</h3>
+        : `<p class="yes">${esc(t('Top level – keep the rhythm and open new markets.'))}</p>`}
+        <h3>${esc(t('Next steps'))}</h3>
         <ol>${career.steps.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>
-        <div class="cta-row"><a class="btn primary" href="#/kampania">🎼 Nowa kampania</a></div>
+        <div class="cta-row"><a class="btn primary" href="#/campaign">🎼 ${esc(t('New campaign'))}</a></div>
       </div>`;
   }
+
+  const LINK_KEYS = ['spotify', 'youtube', 'instagram', 'tiktok', 'soundcloud', 'website'];
 
   function profileForm(p = {}) {
     const l = p.links || {};
     return `
       <form class="form" id="pf">
-        <div class="field"><label>Typ twórcy</label>${creatorSelect(p.creatorType || creator.get())}</div>
+        <div class="field"><label>${esc(t('Creator type'))}</label>${creatorSelect(p.creatorType || creator.get())}</div>
         <div class="row">
-          <div class="field"><label>Nazwa artysty / autora *</label><input name="name" required maxlength="120" value="${esc(p.name)}"></div>
-          <div class="field"><label>E-mail do mediów (niepubliczny)</label><input name="contactEmail" type="email" value="${esc(p.contactEmail)}"></div>
+          <div class="field"><label>${esc(t('Creator / author name'))} *</label><input name="name" required maxlength="120" value="${esc(p.name)}"></div>
+          <div class="field"><label>${esc(t('Press e-mail (not public)'))}</label><input name="contactEmail" type="email" value="${esc(p.contactEmail)}"></div>
         </div>
         <div class="row">
-          <div class="field"><label>Kraj</label><input name="country" value="${esc(p.country)}"></div>
-          <div class="field"><label>Miasto</label><input name="city" value="${esc(p.city)}"></div>
+          <div class="field"><label>${esc(t('Country'))}</label><input name="country" value="${esc(p.country)}"></div>
+          <div class="field"><label>${esc(t('City'))}</label><input name="city" value="${esc(p.city)}"></div>
         </div>
         <div class="row">
-          <div class="field"><label>Zdjęcie (URL)</label><input name="photoUrl" type="url" value="${esc(p.photoUrl)}"></div>
-          <div class="field"><label>Słuchacze / czytelnicy miesięcznie (łącznie)</label><input name="monthlyListeners" type="number" min="0" value="${esc(p.monthlyListeners ?? 0)}"></div>
+          <div class="field"><label>${esc(t('Photo (URL)'))}</label><input name="photoUrl" type="url" value="${esc(p.photoUrl)}"></div>
+          <div class="field"><label>${esc(t('Monthly listeners / readers (total)'))}</label><input name="monthlyListeners" type="number" min="0" value="${esc(p.monthlyListeners ?? 0)}"></div>
         </div>
-        <div class="field"><label>Gatunki</label><select name="genres" multiple size="5">${META.genres.map((g) => `<option${(p.genres || []).includes(g) ? ' selected' : ''}>${esc(g)}</option>`).join('')}</select></div>
-        <div class="field"><label>Bio (PL)</label><textarea name="bio" maxlength="3000">${esc(p.bio)}</textarea></div>
-        <div class="field"><label>Bio (EN) – na rynki zagraniczne</label><textarea name="bioEn" maxlength="3000">${esc(p.bioEn)}</textarea></div>
-        <div class="field"><label>Osiągnięcia (trafiają do pitchu)</label><textarea name="achievements" maxlength="2000">${esc(p.achievements)}</textarea></div>
-        <div class="row">${['spotify', 'youtube', 'instagram', 'tiktok', 'soundcloud', 'website'].map((k) => `<div class="field"><label>${esc(k)}</label><input name="link_${k}" type="url" value="${esc(l[k])}" placeholder="https://"></div>`).join('')}</div>
-        <button class="btn primary" type="submit">Zapisz profil</button>
+        <div class="field"><label>${esc(t('Genres'))}</label><select name="genres" multiple size="5">${META.genres.map((g) => `<option value="${esc(g)}"${(p.genres || []).includes(g) ? ' selected' : ''}>${esc(genre(g))}</option>`).join('')}</select></div>
+        <div class="field"><label>${esc(t('Bio (your language)'))}</label><textarea name="bio" maxlength="3000">${esc(p.bio)}</textarea></div>
+        <div class="field"><label>${esc(t('Bio (English) – for international outlets'))}</label><textarea name="bioEn" maxlength="3000">${esc(p.bioEn)}</textarea></div>
+        <div class="field"><label>${esc(t('Achievements (used in your pitch)'))}</label><textarea name="achievements" maxlength="2000">${esc(p.achievements)}</textarea></div>
+        <div class="row">${LINK_KEYS.map((k) => `<div class="field"><label>${esc(k)}</label><input name="link_${k}" type="url" value="${esc(l[k])}" placeholder="https://"></div>`).join('')}</div>
+        <button class="btn primary" type="submit">${esc(t('Save profile'))}</button>
       </form>`;
   }
 
-  async function viewArtist() {
+  async function viewCreator() {
     const key = storage.get('artistKey');
     if (!key) {
       app.innerHTML = `
-        <h1>Ścieżka artysty</h1>
-        <p class="lead muted">Od pierwszego utworu do sceny międzynarodowej: 5 poziomów, mierzalne cele i plan następnych kroków.</p>
+        <h1>${esc(t('Creator Path'))}</h1>
+        <p class="lead muted">${esc(t('From your first work to the international stage: 5 levels, measurable goals and a plan of next steps.'))}</p>
         <div class="split">
-          <div class="panel"><h2>Zaczynam</h2><p class="muted">Załóż profil i press kit – kampanię uruchomisz w kilka minut.</p><button class="btn primary" id="reg">Załóż profil artysty</button></div>
-          <div class="panel"><h2>Mam klucz</h2>
-            <form class="form" id="kf"><div class="field"><label>Klucz artysty</label><input name="key" required minlength="16"></div><button class="btn" type="submit">Zaloguj</button></form></div>
+          <div class="panel"><h2>${esc(t('I’m starting'))}</h2><p class="muted">${esc(t('Create your profile and press kit – you can launch a campaign in minutes.'))}</p><button class="btn primary" id="reg">${esc(t('Create a creator profile'))}</button></div>
+          <div class="panel"><h2>${esc(t('I have a key'))}</h2>
+            <form class="form" id="kf"><div class="field"><label>${esc(t('Creator key'))}</label><input name="key" required minlength="16"></div><button class="btn" type="submit">${esc(t('Log in'))}</button></form></div>
         </div>`;
       onSubmit(document.getElementById('kf'), async (d) => {
         await api('GET', '/api/artist/me', null, { 'x-artist-key': d.key.trim() });
         storage.set('artistKey', d.key.trim());
-        viewArtist();
+        viewCreator();
       });
       document.getElementById('reg').addEventListener('click', async () => {
         try {
           const r = await api('POST', '/api/artist/register');
           storage.set('artistKey', r.artistKey);
           storage.set('newArtist', true);
-          viewArtist();
+          viewCreator();
         } catch (e) { toast(e.message, true); }
       });
       return;
@@ -717,7 +746,7 @@
     try {
       me = await api('GET', '/api/artist/me', null, h);
     } catch (e) {
-      if (!storage.get('newArtist')) { storage.del('artistKey'); toast(e.message, true); return viewArtist(); }
+      if (!storage.get('newArtist')) { storage.del('artistKey'); toast(e.message, true); return viewCreator(); }
     }
     const [subs, camps, ap] = await Promise.all([
       api('GET', '/api/artist/submissions', null, h).then((r) => r.submissions).catch(() => []),
@@ -727,129 +756,136 @@
     const profile = me && me.profile;
     const thisMonth = new Date().toISOString().slice(0, 7);
     const due = subs.reduce((a, s) => a + s.settlement.duePLN, 0);
+    const draft = profile || { name: storage.get('artistProfile', {}).artistName };
     app.innerHTML = `
-      <div class="sub-head"><h1>${esc(profile ? profile.name : 'Panel artysty')}</h1>
-        <span>${profile ? `<a class="btn small" href="#/artysta/${esc(profile.slug)}">Mój press kit ↗</a>` : ''} <button class="btn small ghost" id="logout">Wyloguj</button></span></div>
-      ${storage.get('newArtist') && !profile ? `<div class="notice warn"><b>Zapisz swój klucz artysty</b> – to jedyny dostęp do panelu:<br><br><span class="key">${esc(key)}</span></div>` : ''}
+      <div class="sub-head"><h1>${esc(profile ? profile.name : t('Creator panel'))}</h1>
+        <span>${profile ? `<a class="btn small" href="#/creator/${esc(profile.slug)}">${esc(t('My press kit ↗'))}</a>` : ''} <button class="btn small ghost" id="logout">${esc(t('Log out'))}</button></span></div>
+      ${storage.get('newArtist') && !profile ? `<div class="notice warn"><b>${esc(t('Save your creator key'))}</b> – ${esc(t('it is the only access to your panel:'))}<br><br><span class="key">${esc(key)}</span></div>` : ''}
       ${autopilotView(ap)}
       ${me ? careerView(me.career) : ''}
-      <details ${profile ? '' : 'open'}><summary><b>${profile ? 'Edytuj profil i press kit' : 'Krok 1: uzupełnij profil i press kit'}</b></summary><div class="panel">${profileForm(profile || storage.get('artistProfile', {}) && { name: storage.get('artistProfile', {}).artistName })}</div></details>
-      <h2>Kampanie</h2>
-      ${camps.length ? '' : '<div class="empty">Brak kampanii. <a href="#/kampania">Uruchom pierwszą</a> – budżet 0 zł wystarczy.</div>'}
+      <details ${profile ? '' : 'open'}><summary><b>${esc(profile ? t('Edit profile and press kit') : t('Step 1: complete your profile and press kit'))}</b></summary><div class="panel">${profileForm(draft)}</div></details>
+      <h2>${esc(t('Campaigns'))}</h2>
+      ${camps.length ? '' : `<div class="empty">${esc(t('No campaigns yet.'))} <a href="#/campaign">${esc(t('Launch your first'))}</a> – ${esc(t('a €0 budget is enough.'))}</div>`}
       ${camps.map((c) => `
         <div class="panel" data-campaign="${esc(c.id)}">
-          <div class="sub-head"><h3>🎼 ${esc(c.trackTitle)} <span class="muted small">premiera ${esc(c.releaseDate)}</span></h3>
-            <span><span class="level">Siła orkiestry: ${c.orchestraScore}/100</span> <button class="btn small" data-ics="${esc(c.id)}">📅 .ics</button></span></div>
-          <p class="muted small">Wysłano ${c.results.sent} zgłoszeń · umieszczenia: ${c.results.placed.length} · zasięg umieszczeń: ${num(c.results.reachPlaced)}</p>
-          <details><summary>Plan A–Z, fale i symulacja</summary>${planView(c, { forCampaign: c })}</details>
+          <div class="sub-head"><h3>🎼 ${esc(c.trackTitle)} <span class="muted small">${esc(t('release {date}', { date: c.releaseDate }))}</span></h3>
+            <span><span class="level">${esc(t('Orchestra strength: {n}/100', { n: c.orchestraScore }))}</span> <button class="btn small" data-ics="${esc(c.id)}">📅 .ics</button></span></div>
+          <p class="muted small">${esc(t('Sent {s} submissions · placements: {p} · placement reach: {r}', { s: c.results.sent, p: c.results.placed.length, r: num(c.results.reachPlaced) }))}</p>
+          <details><summary>${esc(t('A–Z plan, waves and simulation'))}</summary>${planView(c, { forCampaign: c })}</details>
         </div>`).join('')}
-      <h2>Zgłoszenia ${due ? `<span class="muted small">· prowizje do zapłaty: ${pln(due)}</span>` : ''}</h2>
-      ${subs.length ? '' : '<p class="muted">Brak zgłoszeń.</p>'}
+      <h2>${esc(t('Submissions'))} ${due ? `<span class="muted small">· ${esc(t('commissions due: {n}', { n: money(due) }))}</span>` : ''}</h2>
+      ${subs.length ? '' : `<p class="muted">${esc(t('No submissions yet.'))}</p>`}
       ${subs.map((s) => `
         <div class="sub">
           <div class="sub-head">
-            <div><b>${esc(s.trackTitle)}</b> → <a href="#/miejsce/${esc(s.outletId)}">${esc(s.outletName)}</a> <span class="muted small">· ${date(s.createdAt)}${s.campaignId ? ' · kampania' : ''}</span></div>
+            <div><b>${esc(s.trackTitle)}</b> → <a href="#/outlet/${esc(s.outletId)}">${esc(s.outletName)}</a> <span class="muted small">· ${date(s.createdAt)}${s.campaignId ? ` · ${esc(t('campaign'))}` : ''}</span></div>
             ${statusBadge(s.status)}
           </div>
-          <p class="small">${modelBadge(s.agreement)} ${s.reviewFee ? `<span class="muted">opłata za odsłuch: ${pln(s.reviewFee.amountPLN)}</span>` : ''}</p>
+          <p class="small">${modelBadge(s.agreement)} ${s.reviewFee ? `<span class="muted">${esc(t('review fee:'))} ${money(s.reviewFee.amountPLN)}</span>` : ''}</p>
           ${s.curatorNote ? `<p class="notice">💬 ${esc(s.curatorNote)}</p>` : ''}
-          ${s.scheduledFor ? `<p class="small">📅 Planowana emisja: ${esc(s.scheduledFor)}</p>` : ''}
-          ${s.placementUrl ? `<p class="small">🔗 <a href="${esc(s.placementUrl)}" target="_blank" rel="noopener noreferrer nofollow">Zobacz umieszczenie</a></p>` : ''}
-          ${['new', 'listening'].includes(s.status) ? `<button class="btn small ghost" data-withdraw="${esc(s.id)}">Wycofaj zgłoszenie</button>` : ''}
+          ${s.scheduledFor ? `<p class="small">📅 ${esc(t('Scheduled: {date}', { date: s.scheduledFor }))}</p>` : ''}
+          ${s.placementUrl ? `<p class="small">🔗 <a href="${esc(s.placementUrl)}" target="_blank" rel="noopener noreferrer nofollow">${esc(t('See the placement'))}</a></p>` : ''}
+          ${['new', 'listening'].includes(s.status) ? `<button class="btn small ghost" data-withdraw="${esc(s.id)}">${esc(t('Withdraw submission'))}</button>` : ''}
           ${s.settlement.agreementTo ? `
-            <p class="muted small">Umowa prowizyjna: ${esc(s.settlement.agreementFrom)} – ${esc(s.settlement.agreementTo)} · ${s.agreement.ratePercent}% przychodów</p>
+            <p class="muted small">${esc(t('Commission agreement: {from} – {to} · {rate}% of revenue', { from: s.settlement.agreementFrom, to: s.settlement.agreementTo, rate: s.agreement.ratePercent }))}</p>
             ${revenueTable(s)}
             <form class="inline-form" data-rev="${esc(s.id)}">
-              <div class="field"><label>Miesiąc</label><input name="period" type="month" required value="${thisMonth}"></div>
-              <div class="field"><label>Łączny przychód utworu (zł)</label><input name="amountPLN" type="number" min="0" step="0.01" required></div>
-              <div class="field"><label>Uwagi</label><input name="note" maxlength="500" placeholder="np. Spotify + YouTube"></div>
-              <button class="btn" type="submit">Zgłoś przychód</button>
+              <div class="field"><label>${esc(t('Month'))}</label><input name="period" type="month" required value="${thisMonth}"></div>
+              <div class="field"><label>${esc(t('Total revenue of the work (PLN)'))}</label><input name="amountPLN" type="number" min="0" step="0.01" required></div>
+              <div class="field"><label>${esc(t('Notes'))}</label><input name="note" maxlength="500" placeholder="${esc(t('e.g. Spotify + YouTube'))}"></div>
+              <button class="btn" type="submit">${esc(t('Report revenue'))}</button>
             </form>` : ''}
         </div>`).join('')}`;
 
-    document.getElementById('logout').addEventListener('click', () => { storage.del('artistKey'); storage.del('newArtist'); viewArtist(); });
+    document.getElementById('logout').addEventListener('click', () => { storage.del('artistKey'); storage.del('newArtist'); viewCreator(); });
     const pf = document.getElementById('pf');
     onSubmit(pf, async (d) => {
       const links = {};
-      for (const k of ['spotify', 'youtube', 'instagram', 'tiktok', 'soundcloud', 'website']) links[k] = d[`link_${k}`] || '';
+      for (const k of LINK_KEYS) links[k] = d[`link_${k}`] || '';
       creator.set(d.creatorType);
-      const body = {
+      await api('PUT', '/api/artist/profile', {
         creatorType: d.creatorType, name: d.name, contactEmail: d.contactEmail, country: d.country, city: d.city, photoUrl: d.photoUrl,
         monthlyListeners: d.monthlyListeners || 0, bio: d.bio, bioEn: d.bioEn, achievements: d.achievements, links,
         genres: [...pf.querySelector('[name=genres]').selectedOptions].map((x) => x.value),
-      };
-      await api('PUT', '/api/artist/profile', body, h);
+      }, h);
       storage.del('newArtist');
-      toast('Profil zapisany.');
-      viewArtist();
+      toast(t('Profile saved.'));
+      viewCreator();
     });
     app.querySelectorAll('[data-ap-done]').forEach((b) => b.addEventListener('click', async () => {
       const [cid, tid] = b.dataset.apDone.split('|');
-      try { await api('PATCH', `/api/campaigns/${cid}/tasks/${tid}`, { done: true }, h); toast('Zrobione – kolejny ruch czeka.'); viewArtist(); } catch (e) { toast(e.message, true); }
+      try { await api('PATCH', `/api/campaigns/${cid}/tasks/${tid}`, { done: true }, h); toast(t('Done – the next move is waiting.')); viewCreator(); } catch (e) { toast(e.message, true); }
     }));
     app.querySelectorAll('[data-ics]').forEach((b) => b.addEventListener('click', () => downloadIcs(camps.find((c) => c.id === b.dataset.ics))));
     app.querySelectorAll('[data-campaign]').forEach((el) => {
       const cid = el.dataset.campaign;
       el.querySelectorAll('[data-task]').forEach((cb) => cb.addEventListener('change', async () => {
-        try { await api('PATCH', `/api/campaigns/${cid}/tasks/${cb.dataset.task}`, { done: cb.checked }, h); toast('Zapisano – siła orkiestry rośnie.'); } catch (e) { toast(e.message, true); }
+        try { await api('PATCH', `/api/campaigns/${cid}/tasks/${cb.dataset.task}`, { done: cb.checked }, h); toast(t('Saved – orchestra strength is growing.')); } catch (e) { toast(e.message, true); }
       }));
       el.querySelectorAll('[data-send]').forEach((b) => b.addEventListener('click', async () => {
-        try { await api('POST', `/api/campaigns/${cid}/waves/${b.dataset.send}/send`, null, h); toast('Fala wysłana.'); viewArtist(); } catch (e) { toast(e.message, true); }
+        try { await api('POST', `/api/campaigns/${cid}/waves/${b.dataset.send}/send`, null, h); toast(t('Wave sent.')); viewCreator(); } catch (e) { toast(e.message, true); }
       }));
     });
     app.querySelectorAll('[data-withdraw]').forEach((b) => b.addEventListener('click', async () => {
-      if (!confirm('Wycofać zgłoszenie?')) return;
-      try { await api('PATCH', `/api/submissions/${b.dataset.withdraw}`, { status: 'withdrawn' }, h); viewArtist(); } catch (e) { toast(e.message, true); }
+      if (!confirm(t('Withdraw this submission?'))) return;
+      try { await api('PATCH', `/api/submissions/${b.dataset.withdraw}`, { status: 'withdrawn' }, h); viewCreator(); } catch (e) { toast(e.message, true); }
     }));
     app.querySelectorAll('form[data-rev]').forEach((f) => onSubmit(f, async (d) => {
       const r = await api('POST', `/api/submissions/${f.dataset.rev}/revenue`, d, h);
-      toast(r.pool.size > 1
-        ? `Pula Efektu: ${r.pool.size} kuratorów, łącznie ${pln(r.pool.totalCommissionPLN)}${r.pool.factor < 1 ? ` (limit ${r.pool.capPercent}% chroni Twój przychód)` : ''}.`
-        : (r.entry.inAgreement ? `Prowizja do zapłaty: ${pln(r.entry.commissionPLN)}` : 'Okres poza umową – bez prowizji.'));
-      viewArtist();
+      let msg;
+      if (r.pool.size > 1) {
+        msg = t('Effect Pool: {n} curators, {total} in total.', { n: r.pool.size, total: money(r.pool.totalCommissionPLN) });
+        if (r.pool.factor < 1) msg += ` ${t('The {cap}% cap protects your revenue.', { cap: r.pool.capPercent })}`;
+      } else {
+        msg = r.entry.inAgreement ? t('Commission due: {n}', { n: money(r.entry.commissionPLN) }) : t('Outside the agreement period – no commission.');
+      }
+      toast(msg);
+      viewCreator();
     }));
   }
 
+  // ---------- curators ----------
   function outletFormFields(o = {}) {
     const c = o.collaboration || { model: 'commission', ratePercent: 10, durationMonths: 6 };
+    const levels = { 1: t('1 – Newcomer (everyone)'), 2: t('2 – Local'), 3: t('3 – National'), 4: t('4 – International'), 5: t('5 – Global') };
     return `
       <div class="row">
-        <div class="field"><label>Nazwa *</label><input name="name" required maxlength="120" value="${esc(o.name)}"></div>
-        <div class="field"><label>Typ *</label><select name="type" required>${options(META.types, o.type || 'playlist')}</select></div>
+        <div class="field"><label>${esc(t('Name'))} *</label><input name="name" required maxlength="120" value="${esc(o.name)}"></div>
+        <div class="field"><label>${esc(t('Type'))} *</label><select name="type" required>${options(META.types, o.type || 'playlist')}</select></div>
       </div>
       <div class="row">
-        <div class="field"><label>Link (playlista, stacja, kanał) *</label><input name="url" type="url" required value="${esc(o.url)}"></div>
-        <div class="field"><label>E-mail kontaktowy *</label><input name="contactEmail" type="email" required value="${esc(o.contactEmail)}"></div>
+        <div class="field"><label>${esc(t('Link (playlist, station, channel)'))} *</label><input name="url" type="url" required value="${esc(o.url)}"></div>
+        <div class="field"><label>${esc(t('Contact e-mail'))} *</label><input name="contactEmail" type="email" required value="${esc(o.contactEmail)}"></div>
       </div>
       <div class="row">
-        <div class="field"><label>Zasięg (obserwujący / słuchacze)</label><input name="reach" type="number" min="0" value="${esc(o.reach ?? '')}"></div>
-        <div class="field"><label>Termin odpowiedzi (dni)</label><input name="responseDays" type="number" min="1" max="90" value="${esc(o.responseDays ?? 7)}"></div>
+        <div class="field"><label>${esc(t('Reach (followers / listeners)'))}</label><input name="reach" type="number" min="0" value="${esc(o.reach ?? '')}"></div>
+        <div class="field"><label>${esc(t('Response deadline (days)'))}</label><input name="responseDays" type="number" min="1" max="90" value="${esc(o.responseDays ?? 7)}"></div>
       </div>
-      <div class="field"><label>Przyjmuję zgłoszenia od</label>
-        <div class="checks">${Object.entries(META.creators).map(([k, c]) => `<label class="check"><input type="checkbox" name="ct_${esc(k)}" ${(o.creatorTypes || ['music']).includes(k) ? 'checked' : ''}> ${esc(c.label)}</label>`).join('')}</div></div>
-      <div class="field"><label>Minimalny poziom artysty (Drabina dostępu)</label>
-        <select name="minLevel">${options({ 1: '1 – Debiutant (wszyscy)', 2: '2 – Lokalny', 3: '3 – Krajowy', 4: '4 – Międzynarodowy', 5: '5 – Globalny' }, String(o.minLevel || 1))}</select>
-        <div class="hint">Duże miejsca mogą przyjmować tylko artystów z udokumentowanymi wynikami – mniej przypadkowych zgłoszeń, a artyści mają cel, do którego dążą.</div></div>
+      <div class="field"><label>${esc(t('I accept submissions from'))}</label>
+        <div class="checks">${Object.entries(META.creators).map(([k, cr]) => `<label class="check"><input type="checkbox" name="ct_${esc(k)}" ${(o.creatorTypes || ['music']).includes(k) ? 'checked' : ''}> ${esc(cr.label)}</label>`).join('')}</div></div>
+      <div class="field"><label>${esc(t('Minimum creator level (Access Ladder)'))}</label>
+        <select name="minLevel">${options(levels, String(o.minLevel || 1))}</select>
+        <div class="hint">${esc(t('Big outlets can accept only creators with documented results – fewer random submissions, and creators get a goal to work towards.'))}</div></div>
       <div class="row">
-        <div class="field"><label>Kraj</label><input name="country" maxlength="60" value="${esc(o.country)}"></div>
-        <div class="field"><label>Język</label><input name="language" maxlength="60" value="${esc(o.language)}"></div>
+        <div class="field"><label>${esc(t('Country (e.g. PL, DE, US)'))}</label><input name="country" maxlength="60" value="${esc(o.country)}"></div>
+        <div class="field"><label>${esc(t('Language'))}</label><input name="language" maxlength="60" value="${esc(o.language)}"></div>
       </div>
-      <div class="field"><label>Gatunki (Ctrl/Cmd, aby zaznaczyć kilka; brak = wszystkie)</label>
-        <select name="genres" multiple size="6">${META.genres.map((g) => `<option${(o.genres || []).includes(g) ? ' selected' : ''}>${esc(g)}</option>`).join('')}</select></div>
-      <div class="field"><label>Opis</label><textarea name="description" maxlength="2000">${esc(o.description)}</textarea></div>
+      <div class="field"><label>${esc(t('Genres (Ctrl/Cmd to select several; none = all)'))}</label>
+        <select name="genres" multiple size="6">${META.genres.map((g) => `<option value="${esc(g)}"${(o.genres || []).includes(g) ? ' selected' : ''}>${esc(genre(g))}</option>`).join('')}</select></div>
+      <div class="field"><label>${esc(t('Description'))}</label><textarea name="description" maxlength="2000">${esc(o.description)}</textarea></div>
       <fieldset>
-        <legend>Warunki współpracy</legend>
+        <legend>${esc(t('Collaboration terms'))}</legend>
         <div class="row">
-          <div class="field"><label>Model</label><select name="model" id="modelSel">${options(META.models, c.model)}</select></div>
-          <div class="field" data-for="percent"><label>Prowizja / udział (%)</label><input name="ratePercent" type="number" min="1" max="50" value="${esc(c.ratePercent || 10)}"></div>
+          <div class="field"><label>${esc(t('Model'))}</label><select name="model" id="modelSel">${options(META.models, c.model)}</select></div>
+          <div class="field" data-for="percent"><label>${esc(t('Commission / share (%)'))}</label><input name="ratePercent" type="number" min="1" max="50" value="${esc(c.ratePercent || 10)}"></div>
         </div>
         <div class="row">
-          <div class="field" data-for="percent"><label>Czas trwania umowy (mies.)</label><input name="durationMonths" type="number" min="1" max="36" value="${esc(c.durationMonths || 6)}"></div>
-          <div class="field" data-for="fee"><label>Opłata za odsłuch (zł)</label><input name="feePLN" type="number" min="1" value="${esc(c.feePLN || 10)}"></div>
+          <div class="field" data-for="percent"><label>${esc(t('Agreement length (months)'))}</label><input name="durationMonths" type="number" min="1" max="36" value="${esc(c.durationMonths || 6)}"></div>
+          <div class="field" data-for="fee"><label>${esc(t('Review fee (PLN)'))}</label><input name="feePLN" type="number" min="1" value="${esc(c.feePLN || 10)}"></div>
         </div>
-        <div class="field"><label>Szczegółowe warunki</label><textarea name="terms" maxlength="2000">${esc(c.terms)}</textarea></div>
+        <div class="field"><label>${esc(t('Detailed terms'))}</label><textarea name="terms" maxlength="2000">${esc(c.terms)}</textarea></div>
         <p class="hint muted small" id="modelDesc"></p>
-        <p class="hint muted small">Platforma pobiera ${esc(META.platformFeePercent)}% z każdej prowizji i opłaty – resztę otrzymujesz Ty.</p>
+        <p class="hint muted small">${esc(t('The platform keeps {n}% of every commission and fee – the rest is yours.', { n: META.platformFeePercent }))}</p>
       </fieldset>`;
   }
 
@@ -877,23 +913,23 @@
     };
   }
 
-  async function viewCurator() {
+  async function viewCurators() {
     const session = storage.get('curator');
     if (session) return viewCuratorInbox(session);
     app.innerHTML = `
-      <h1>Dla kuratorów, stacji i twórców</h1>
-      <p class="lead muted">Masz playlistę, radio, kanał, bloga, podcast albo pulę DJ-ską? Dołącz i zarabiaj na promowaniu muzyki, którą naprawdę lubisz. Sam ustalasz model: prowizja od przychodów utworu, podział, opłata za odsłuch albo barter.</p>
+      <h1>${esc(t('For curators, stations and creators'))}</h1>
+      <p class="lead muted">${esc(t('Run a playlist, radio show, channel, blog, podcast, magazine or record pool? Join and earn by promoting work you genuinely like. You choose the model: commission on the work’s revenue, revenue share, review fee or barter.'))}</p>
       <div class="split">
         <div class="panel">
-          <h2>Dodaj swoje miejsce</h2>
-          <form class="form" id="of">${outletFormFields()}<button class="btn primary" type="submit">Dodaj do katalogu</button></form>
+          <h2>${esc(t('List your outlet'))}</h2>
+          <form class="form" id="of">${outletFormFields()}<button class="btn primary" type="submit">${esc(t('Add to the catalog'))}</button></form>
         </div>
         <div class="panel">
-          <h2>Mam już konto</h2>
+          <h2>${esc(t('I already have an account'))}</h2>
           <form class="form" id="lf">
-            <div class="field"><label>ID miejsca</label><input name="id" required placeholder="out_…"></div>
-            <div class="field"><label>Klucz kuratora</label><input name="key" required></div>
-            <button class="btn" type="submit">Otwórz skrzynkę zgłoszeń</button>
+            <div class="field"><label>${esc(t('Outlet ID'))}</label><input name="id" required placeholder="out_…"></div>
+            <div class="field"><label>${esc(t('Curator key'))}</label><input name="key" required></div>
+            <button class="btn" type="submit">${esc(t('Open the submission inbox'))}</button>
           </form>
         </div>
       </div>`;
@@ -903,16 +939,16 @@
       const r = await api('POST', '/api/outlets', outletPayload(of));
       storage.set('curator', { id: r.outlet.id, key: r.manageKey });
       app.innerHTML = `
-        <h1>Witamy w Promo Hub! 🎧</h1>
-        <div class="notice ok">„${esc(r.outlet.name)}” jest już w katalogu. Po weryfikacji otrzyma odznakę ✔ i wyższą pozycję w rankingu.</div>
-        <div class="notice warn"><b>Zapisz dane dostępowe:</b><br>ID: <span class="key">${esc(r.outlet.id)}</span><br><br>Klucz kuratora: <span class="key">${esc(r.manageKey)}</span></div>
-        <a class="btn primary" href="#/kurator">Przejdź do skrzynki zgłoszeń</a>`;
+        <h1>${esc(t('Welcome to Promo Hub!'))} 🎧</h1>
+        <div class="notice ok">${esc(t('“{name}” is in the catalog. After verification it gets a ✔ badge and a higher ranking.', { name: r.outlet.name }))}</div>
+        <div class="notice warn"><b>${esc(t('Save your access details:'))}</b><br>ID: <span class="key">${esc(r.outlet.id)}</span><br><br>${esc(t('Curator key:'))} <span class="key">${esc(r.manageKey)}</span></div>
+        <a class="btn primary" href="#/curators">${esc(t('Go to the submission inbox'))}</a>`;
     });
     onSubmit(document.getElementById('lf'), async (d) => {
       const s = { id: d.id.trim(), key: d.key.trim() };
       await api('GET', `/api/outlets/${encodeURIComponent(s.id)}/submissions`, null, { 'x-manage-key': s.key });
       storage.set('curator', s);
-      viewCurator();
+      viewCurators();
     });
   }
 
@@ -924,59 +960,60 @@
     } catch (e) {
       storage.del('curator');
       toast(e.message, true);
-      return viewCurator();
+      return viewCurators();
     }
     const { outlet, submissions, totals } = d;
     const fee = META.platformFeePercent / 100;
     const open = submissions.filter((s) => ['new', 'listening'].includes(s.status));
+    const pct = (v) => (v === null || v === undefined ? '—' : `${v}%`);
     app.innerHTML = `
-      <div class="sub-head"><h1>${esc(outlet.name)}</h1><span><a class="btn small" href="#/miejsce/${esc(outlet.id)}">Profil publiczny</a> <button class="btn small ghost" id="logout">Wyloguj</button></span></div>
+      <div class="sub-head"><h1>${esc(outlet.name)}</h1><span><a class="btn small" href="#/outlet/${esc(outlet.id)}">${esc(t('Public profile'))}</a> <button class="btn small ghost" id="logout">${esc(t('Log out'))}</button></span></div>
       <div class="stats">
-        <div class="stat"><b>${open.length}</b><span>czeka na decyzję</span></div>
-        <div class="stat"><b>${outlet.stats.acceptanceRate ?? '—'}${outlet.stats.acceptanceRate !== null ? '%' : ''}</b><span>akceptacji</span></div>
-        <div class="stat"><b>${outlet.stats.responseRate ?? '—'}${outlet.stats.responseRate !== null ? '%' : ''}</b><span>odpowiedzi w terminie</span></div>
-        <div class="stat"><b>${pln(totals.commissionPLN * (1 - fee))}</b><span>Twoje zarobki (netto)</span></div>
-        <div class="stat"><b>${pln(totals.duePLN * (1 - fee))}</b><span>oczekuje na wpłatę</span></div>
+        <div class="stat"><b>${open.length}</b><span>${esc(t('awaiting decision'))}</span></div>
+        <div class="stat"><b>${pct(outlet.stats.acceptanceRate)}</b><span>${esc(t('accepted'))}</span></div>
+        <div class="stat"><b>${pct(outlet.stats.responseRate)}</b><span>${esc(t('answered on time'))}</span></div>
+        <div class="stat"><b>${money(totals.commissionPLN * (1 - fee))}</b><span>${esc(t('your earnings (net)'))}</span></div>
+        <div class="stat"><b>${money(totals.duePLN * (1 - fee))}</b><span>${esc(t('awaiting payment'))}</span></div>
       </div>
-      <label class="check"><input type="checkbox" id="acceptToggle" ${outlet.acceptsSubmissions ? 'checked' : ''}> Przyjmuję nowe zgłoszenia</label>
-      <details><summary>Edytuj profil i warunki</summary><div class="panel"><form class="form" id="ef">${outletFormFields(outlet)}<button class="btn primary" type="submit">Zapisz</button></form></div></details>
+      <label class="check"><input type="checkbox" id="acceptToggle" ${outlet.acceptsSubmissions ? 'checked' : ''}> ${esc(t('I accept new submissions'))}</label>
+      <details><summary>${esc(t('Edit profile and terms'))}</summary><div class="panel"><form class="form" id="ef">${outletFormFields(outlet)}<button class="btn primary" type="submit">${esc(t('Save'))}</button></form></div></details>
       <br>
-      <h2>Zgłoszenia</h2>
-      ${submissions.length ? '' : '<div class="empty">Brak zgłoszeń. Uzupełnij gatunki i opis, aby lepiej trafiać do artystów.</div>'}
+      <h2>${esc(t('Submissions'))}</h2>
+      ${submissions.length ? '' : `<div class="empty">${esc(t('No submissions yet. Complete your genres and description to reach the right creators.'))}</div>`}
       ${submissions.map((s) => {
         const next = META.transitions[s.status] || [];
         const deadline = new Date(Date.parse(s.createdAt) + (outlet.responseDays || 7) * 864e5);
         return `
         <div class="sub">
           <div class="sub-head">
-            <div><b>${esc(s.artistName)} – ${esc(s.trackTitle)}</b> <span class="muted small">${esc(s.genre)} · ${date(s.createdAt)}</span>${s.artistSlug ? ` <a class="tag" href="#/artysta/${esc(s.artistSlug)}">press kit · ${esc(s.artistLevel)}</a>` : ''}</div>
+            <div><b>${esc(s.artistName)} – ${esc(s.trackTitle)}</b> <span class="muted small">${esc(s.genre ? genre(s.genre) : '')} · ${date(s.createdAt)}</span>${s.artistSlug ? ` <a class="tag" href="#/creator/${esc(s.artistSlug)}">${esc(t('press kit'))} · ${esc(s.artistLevel)}</a>` : ''}</div>
             ${statusBadge(s.status)}
           </div>
-          <p><a href="${esc(s.trackUrl)}" target="_blank" rel="noopener noreferrer nofollow">▶ Odsłuchaj</a> · <a href="mailto:${esc(s.artistEmail)}">${esc(s.artistEmail)}</a>${s.releaseDate ? ` · premiera ${esc(s.releaseDate)}` : ''}</p>
+          <p><a href="${esc(s.trackUrl)}" target="_blank" rel="noopener noreferrer nofollow">▶ ${esc(t('Open the work'))}</a> · <a href="mailto:${esc(s.artistEmail)}">${esc(s.artistEmail)}</a>${s.releaseDate ? ` · ${esc(t('release {date}', { date: s.releaseDate }))}` : ''}</p>
           ${s.message ? `<p class="muted">${esc(s.message)}</p>` : ''}
-          ${['new', 'listening'].includes(s.status) ? `<p class="small" >⏳ Odpowiedz do ${deadline.toLocaleDateString('pl-PL')}, inaczej zgłoszenie wygaśnie.</p>` : ''}
+          ${['new', 'listening'].includes(s.status) ? `<p class="small">⏳ ${esc(t('Reply by {date}, otherwise the submission expires.', { date: deadline.toLocaleDateString(locale()) }))}</p>` : ''}
           ${next.length ? `
             <form class="inline-form" data-sub="${esc(s.id)}">
-              <div class="field"><label>Decyzja</label><select name="status">${next.map((n) => `<option value="${esc(n)}">${esc(META.statuses[n])}</option>`).join('')}</select></div>
-              <div class="field"><label>Termin emisji</label><input name="scheduledFor" type="date" value="${esc(s.scheduledFor)}"></div>
-              <div class="field"><label>Link do umieszczenia</label><input name="placementUrl" type="url" value="${esc(s.placementUrl)}" placeholder="https://"></div>
-              <div class="field"><label>Feedback dla artysty</label><input name="curatorNote" maxlength="2000" value="${esc(s.curatorNote)}"></div>
-              <button class="btn primary" type="submit">Zapisz</button>
+              <div class="field"><label>${esc(t('Decision'))}</label><select name="status">${next.map((n) => `<option value="${esc(n)}">${esc(META.statuses[n])}</option>`).join('')}</select></div>
+              <div class="field"><label>${esc(t('Scheduled date'))}</label><input name="scheduledFor" type="date" value="${esc(s.scheduledFor)}"></div>
+              <div class="field"><label>${esc(t('Placement link'))}</label><input name="placementUrl" type="url" value="${esc(s.placementUrl)}" placeholder="https://"></div>
+              <div class="field"><label>${esc(t('Feedback for the creator'))}</label><input name="curatorNote" maxlength="2000" value="${esc(s.curatorNote)}"></div>
+              <button class="btn primary" type="submit">${esc(t('Save'))}</button>
             </form>` : (s.curatorNote ? `<p class="small">💬 ${esc(s.curatorNote)}</p>` : '')}
-          ${s.settlement.agreementTo ? `<p class="muted small">Umowa: ${esc(s.settlement.agreementFrom)} – ${esc(s.settlement.agreementTo)}, ${s.agreement.ratePercent}%</p>${revenueTable(s, { curatorKey: session.key })}` : ''}
+          ${s.settlement.agreementTo ? `<p class="muted small">${esc(t('Agreement: {from} – {to}, {rate}%', { from: s.settlement.agreementFrom, to: s.settlement.agreementTo, rate: s.agreement.ratePercent }))}</p>${revenueTable(s, { curatorKey: session.key })}` : ''}
         </div>`;
       }).join('')}`;
 
-    document.getElementById('logout').addEventListener('click', () => { storage.del('curator'); viewCurator(); });
+    document.getElementById('logout').addEventListener('click', () => { storage.del('curator'); viewCurators(); });
     document.getElementById('acceptToggle').addEventListener('change', async (e) => {
-      try { await api('PATCH', `/api/outlets/${outlet.id}`, { acceptsSubmissions: e.target.checked }, h); toast('Zapisano.'); } catch (err) { toast(err.message, true); }
+      try { await api('PATCH', `/api/outlets/${outlet.id}`, { acceptsSubmissions: e.target.checked }, h); toast(t('Saved.')); } catch (err) { toast(err.message, true); }
     });
     const ef = document.getElementById('ef');
     bindModelToggle(ef);
-    onSubmit(ef, async () => { await api('PATCH', `/api/outlets/${outlet.id}`, outletPayload(ef), h); toast('Zapisano profil. Nowe warunki dotyczą tylko nowych zgłoszeń.'); viewCuratorInbox(session); });
+    onSubmit(ef, async () => { await api('PATCH', `/api/outlets/${outlet.id}`, outletPayload(ef), h); toast(t('Profile saved. New terms apply to new submissions only.')); viewCuratorInbox(session); });
     app.querySelectorAll('form[data-sub]').forEach((f) => onSubmit(f, async (d) => {
       await api('PATCH', `/api/submissions/${f.dataset.sub}`, d, h);
-      toast('Zapisano decyzję.');
+      toast(t('Decision saved.'));
       viewCuratorInbox(session);
     }));
     app.querySelectorAll('[data-paid]').forEach((b) => b.addEventListener('click', async () => {
@@ -985,10 +1022,11 @@
     }));
   }
 
+  // ---------- admin ----------
   async function viewAdmin() {
     const token = storage.get('adminToken');
     if (!token) {
-      app.innerHTML = `<h1>Panel administratora</h1><form class="form" id="af"><div class="field"><label>Token administratora</label><input name="token" type="password" required></div><button class="btn primary" type="submit">Zaloguj</button></form>`;
+      app.innerHTML = `<h1>${esc(t('Admin panel'))}</h1><form class="form" id="af"><div class="field"><label>${esc(t('Admin token'))}</label><input name="token" type="password" required></div><button class="btn primary" type="submit">${esc(t('Log in'))}</button></form>`;
       onSubmit(document.getElementById('af'), async (d) => {
         await api('GET', '/api/admin/summary', null, { 'x-admin-token': d.token });
         storage.set('adminToken', d.token);
@@ -1000,69 +1038,69 @@
     let s;
     try { s = await api('GET', '/api/admin/summary', null, h); } catch (e) { storage.del('adminToken'); toast(e.message, true); return viewAdmin(); }
     app.innerHTML = `
-      <div class="sub-head"><h1>Panel administratora</h1><button class="btn small ghost" id="logout">Wyloguj</button></div>
-      <h2>Twoje zarobki (prowizja platformy ${esc(s.platformFeePercent)}%)</h2>
+      <div class="sub-head"><h1>${esc(t('Admin panel'))}</h1><button class="btn small ghost" id="logout">${esc(t('Log out'))}</button></div>
+      <h2>${esc(t('Your earnings (platform fee {n}%)', { n: s.platformFeePercent }))}</h2>
       <div class="stats">
-        <div class="stat"><b>${pln(s.earnings.totalPLN)}</b><span>łącznie naliczone</span></div>
-        <div class="stat"><b>${pln(s.earnings.fromCommissionsPLN)}</b><span>z prowizji</span></div>
-        <div class="stat"><b>${pln(s.earnings.fromReviewFeesPLN)}</b><span>z opłat za odsłuch</span></div>
-        <div class="stat"><b>${pln(s.earnings.duePLN)}</b><span>do pobrania</span></div>
+        <div class="stat"><b>${money(s.earnings.totalPLN)}</b><span>${esc(t('total accrued'))}</span></div>
+        <div class="stat"><b>${money(s.earnings.fromCommissionsPLN)}</b><span>${esc(t('from commissions'))}</span></div>
+        <div class="stat"><b>${money(s.earnings.fromReviewFeesPLN)}</b><span>${esc(t('from review fees'))}</span></div>
+        <div class="stat"><b>${money(s.earnings.duePLN)}</b><span>${esc(t('to collect'))}</span></div>
       </div>
       <div class="panel sub-head">
-        <div><h2>🌍 Światowa Baza Podmiotów</h2><p class="muted">${num(s.entities.total)} podmiotów · w rozmowach: ${num(s.entities.inPipeline)} · partnerzy: ${num(s.entities.partners)}</p></div>
-        <a class="btn primary" href="#/admin/baza">Otwórz bazę (CRM) →</a>
+        <div><h2>🌍 ${esc(t('Global Entity Database'))}</h2><p class="muted">${esc(t('{n} entities · in talks: {p} · partners: {q}', { n: num(s.entities.total), p: num(s.entities.inPipeline), q: num(s.entities.partners) }))}</p></div>
+        <a class="btn primary" href="#/admin/database">${esc(t('Open the database (CRM) →'))}</a>
       </div>
-      <h2>Do weryfikacji (${s.pendingVerification.length})</h2>
+      <h2>${esc(t('To verify ({n})', { n: s.pendingVerification.length }))}</h2>
       ${s.pendingVerification.length ? s.pendingVerification.map((o) => `
         <div class="sub sub-head">
           <div><b>${esc(o.name)}</b> <span class="muted small">${esc(META.types[o.type])} · ${num(o.reach)} · ${esc(o.contactEmail)}</span><br><a href="${esc(o.url)}" target="_blank" rel="noopener noreferrer nofollow">${esc(o.url)}</a></div>
-          <span><button class="btn small primary" data-verify="${esc(o.id)}">Zweryfikuj</button> <button class="btn small ghost" data-del="${esc(o.id)}">Usuń</button></span>
-        </div>`).join('') : '<p class="muted">Wszystko zweryfikowane.</p>'}
-      <h2>Najskuteczniejsze miejsca</h2>
-      <div class="panel table-wrap"><table class="compare"><thead><tr><th>Miejsce</th><th>Zgłoszenia</th><th>Umieszczenia</th><th>Akceptacja</th><th>Odpowiedzi</th></tr></thead><tbody>
-        ${s.topOutlets.map((o) => `<tr><td><a href="#/miejsce/${esc(o.id)}">${esc(o.name)}</a></td><td>${o.submissions}</td><td>${o.placed}</td><td>${o.acceptanceRate ?? '—'}</td><td>${o.responseRate ?? '—'}</td></tr>`).join('')}
+          <span><button class="btn small primary" data-verify="${esc(o.id)}">${esc(t('Verify'))}</button> <button class="btn small ghost" data-del="${esc(o.id)}">${esc(t('Delete'))}</button></span>
+        </div>`).join('') : `<p class="muted">${esc(t('Everything is verified.'))}</p>`}
+      <h2>${esc(t('Top-performing outlets'))}</h2>
+      <div class="panel table-wrap"><table class="compare"><thead><tr><th>${esc(t('Outlet'))}</th><th>${esc(t('Submissions'))}</th><th>${esc(t('Placements'))}</th><th>${esc(t('Accepted'))}</th><th>${esc(t('On time'))}</th></tr></thead><tbody>
+        ${s.topOutlets.map((o) => `<tr><td><a href="#/outlet/${esc(o.id)}">${esc(o.name)}</a></td><td>${o.submissions}</td><td>${o.placed}</td><td>${o.acceptanceRate ?? '—'}</td><td>${o.responseRate ?? '—'}</td></tr>`).join('')}
       </tbody></table></div>`;
     document.getElementById('logout').addEventListener('click', () => { storage.del('adminToken'); viewAdmin(); });
     app.querySelectorAll('[data-verify]').forEach((b) => b.addEventListener('click', async () => {
       try { await api('PATCH', `/api/outlets/${b.dataset.verify}`, { verified: true }, h); viewAdmin(); } catch (e) { toast(e.message, true); }
     }));
     app.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', async () => {
-      if (!confirm('Usunąć to miejsce z katalogu?')) return;
+      if (!confirm(t('Remove this outlet from the catalog?'))) return;
       try { await api('DELETE', `/api/outlets/${b.dataset.del}`, null, h); viewAdmin(); } catch (e) { toast(e.message, true); }
     }));
   }
 
-  // ---------- Światowa Baza Podmiotów (CRM admina) ----------
+  // Global Entity Database (admin CRM).
   async function viewAdminEntities() {
     const token = storage.get('adminToken');
     if (!token) { location.hash = '#/admin'; return; }
     const h = { 'x-admin-token': token };
     const f = storage.get('entityFilters', { q: '', creator: '', region: '', stage: '', kind: '', submission: '' });
     app.innerHTML = `
-      <div class="sub-head"><h1>🌍 Światowa Baza Podmiotów</h1><a class="btn small ghost" href="#/admin">← Panel admina</a></div>
-      <p class="muted">Realne podmioty, z którymi można współpracować bezpłatnie, za niską opłatę lub na prowizję. Domyślnie to <b>prospekty</b> – nie partnerzy. Zweryfikuj warunki u źródła, oznacz „publiczny”, aby trafił do Planu A–Z twórców, albo podpisz współpracę i przekonwertuj w partnera katalogu.</p>
+      <div class="sub-head"><h1>🌍 ${esc(t('Global Entity Database'))}</h1><a class="btn small ghost" href="#/admin">← ${esc(t('Admin panel'))}</a></div>
+      <p class="muted">${esc(t('Real entities you can work with for free, for a low fee or on commission. By default they are prospects – not partners. Verify the terms at the source, mark an entity “public” to add it to creators’ A–Z plans, or sign a deal and convert it into a catalog partner.'))}</p>
       <div id="entStats"></div>
       <form class="filters" id="ef">
-        <input name="q" placeholder="Szukaj: nazwa, kraj, uwagi…" value="${esc(f.q)}">
-        <select name="creator">${options(META.creators, f.creator, 'Wszyscy twórcy')}</select>
-        <select name="region">${options(META.regions, f.region, 'Każdy region')}</select>
-        <select name="stage">${options(META.entityStages, f.stage, 'Każdy etap')}</select>
-        <select name="kind">${options(META.entityKinds, f.kind, 'Każdy typ')}</select>
-        <select name="submission">${options(META.submissionModes, f.submission, 'Każdy tryb')}</select>
+        <input name="q" placeholder="${esc(t('Search: name, country, notes…'))}" value="${esc(f.q)}">
+        <select name="creator">${options(META.creators, f.creator, t('All creators'))}</select>
+        <select name="region">${options(META.regions, f.region, t('Any region'))}</select>
+        <select name="stage">${options(META.entityStages, f.stage, t('Any stage'))}</select>
+        <select name="kind">${options(META.entityKinds, f.kind, t('Any type'))}</select>
+        <select name="submission">${options(META.submissionModes, f.submission, t('Any mode'))}</select>
       </form>
       <div class="cta-row">
-        <button class="btn" id="exportCsv">⬇ Eksport CSV</button>
-        <details class="inline"><summary class="btn">⬆ Import CSV</summary>
-          <div class="panel"><p class="muted small">Kolumny: name, url (wymagane), kind, creatorTypes (music|dj|writer), country, region, submission, model, stage, contactEmail, verified, publicListing, notes. Duplikaty (ta sama domena + nazwa) są pomijane.</p>
-            <input type="file" id="csvFile" accept=".csv,text/csv"><textarea id="csvText" rows="5" placeholder="lub wklej CSV"></textarea><button class="btn primary" id="importCsv">Importuj</button></div></details>
-        <details class="inline"><summary class="btn">＋ Dodaj podmiot</summary>
+        <button class="btn" id="exportCsv">⬇ ${esc(t('Export CSV'))}</button>
+        <details class="inline"><summary class="btn">⬆ ${esc(t('Import CSV'))}</summary>
+          <div class="panel"><p class="muted small">${esc(t('Columns: name, url (required), kind, creatorTypes (music|dj|writer), country (ISO code), region, submission, model, tier, reach, contactEmail, notes, notesPl, sourceUrl, evidence, confidence, lastChecked. Duplicates (same domain + name) are skipped.'))}</p>
+            <input type="file" id="csvFile" accept=".csv,text/csv"><textarea id="csvText" rows="5" placeholder="${esc(t('or paste CSV'))}"></textarea><button class="btn primary" id="importCsv">${esc(t('Import'))}</button></div></details>
+        <details class="inline"><summary class="btn">＋ ${esc(t('Add entity'))}</summary>
           <div class="panel"><form class="form" id="addEnt">
-            <div class="row"><div class="field"><label>Nazwa *</label><input name="name" required></div><div class="field"><label>URL *</label><input name="url" type="url" required></div></div>
-            <div class="row"><div class="field"><label>Typ</label><select name="kind">${options(META.entityKinds, 'radio')}</select></div><div class="field"><label>Region</label><select name="region">${options(META.regions, 'Europa')}</select></div></div>
-            <div class="row"><div class="field"><label>Kraj</label><input name="country"></div><div class="field"><label>Twórcy</label><select name="creatorTypes">${options(META.creators, 'music')}</select></div></div>
-            <div class="row"><div class="field"><label>Tryb zgłoszeń</label><select name="submission">${options(META.submissionModes, 'contact')}</select></div><div class="field"><label>Proponowany model</label><select name="model">${options(META.models, 'free')}</select></div></div>
-            <div class="field"><label>Uwagi</label><input name="notes"></div>
-            <button class="btn primary" type="submit">Dodaj</button></form></div></details>
+            <div class="row"><div class="field"><label>${esc(t('Name'))} *</label><input name="name" required></div><div class="field"><label>URL *</label><input name="url" type="url" required></div></div>
+            <div class="row"><div class="field"><label>${esc(t('Type'))}</label><select name="kind">${options(META.entityKinds, 'radio')}</select></div><div class="field"><label>${esc(t('Country (ISO code, e.g. PL)'))}</label><input name="country" maxlength="2"></div></div>
+            <div class="row"><div class="field"><label>${esc(t('Creators'))}</label><select name="creatorTypes">${options(META.creators, 'music')}</select></div><div class="field"><label>${esc(t('Recommended level'))}</label><select name="tier">${options({ 1: '1', 2: '2', 3: '3', 4: '4', 5: '5' }, '2')}</select></div></div>
+            <div class="row"><div class="field"><label>${esc(t('Submission mode'))}</label><select name="submission">${options(META.submissionModes, 'contact')}</select></div><div class="field"><label>${esc(t('Proposed model'))}</label><select name="model">${options(META.models, 'free')}</select></div></div>
+            <div class="row"><div class="field"><label>${esc(t('Note (EN)'))}</label><input name="notes"></div><div class="field"><label>${esc(t('Note (PL)'))}</label><input name="notesPl"></div></div>
+            <button class="btn primary" type="submit">${esc(t('Add'))}</button></form></div></details>
       </div>
       <div id="outreach"></div>
       <div id="entList"></div>`;
@@ -1076,31 +1114,31 @@
       const st = r.facets.stage;
       document.getElementById('entStats').innerHTML = `
         <div class="stats">
-          <div class="stat"><b>${num(r.total)}</b><span>podmiotów w bazie</span></div>
-          <div class="stat"><b>${num(r.countries)}</b><span>krajów</span></div>
-          <div class="stat"><b>${num(st.contacted || 0)} / ${num(st.negotiation || 0)}</b><span>kontakt / negocjacje</span></div>
-          <div class="stat"><b>${num(st.partner || 0)}</b><span>partnerów w katalogu</span></div>
-          <div class="stat"><b>${num(r.facets.creatorTypes.music || 0)} · ${num(r.facets.creatorTypes.dj || 0)} · ${num(r.facets.creatorTypes.writer || 0)}</b><span>muzyka · DJ · literatura</span></div>
+          <div class="stat"><b>${num(r.total)}</b><span>${esc(t('entities in the database'))}</span></div>
+          <div class="stat"><b>${num(r.countries)}</b><span>${esc(t('countries'))}</span></div>
+          <div class="stat"><b>${num(st.contacted || 0)} / ${num(st.negotiation || 0)}</b><span>${esc(t('contacted / negotiating'))}</span></div>
+          <div class="stat"><b>${num(st.partner || 0)}</b><span>${esc(t('partners in the catalog'))}</span></div>
+          <div class="stat"><b>${num(r.facets.creatorTypes.music || 0)} · ${num(r.facets.creatorTypes.dj || 0)} · ${num(r.facets.creatorTypes.writer || 0)}</b><span>${esc(t('music · DJ · literature'))}</span></div>
         </div>`;
-      list.innerHTML = `<p class="muted small">Wyniki: ${r.entities.length}</p>` + r.entities.map((e) => `
+      list.innerHTML = `<p class="muted small">${esc(t('Results: {n}', { n: r.entities.length }))}</p>` + r.entities.map((e) => `
         <div class="sub ent" data-ent="${esc(e.id)}" data-email="${esc(e.contactEmail)}">
           <div class="sub-head">
             <div><b><a href="${esc(e.url)}" target="_blank" rel="noopener noreferrer nofollow">${esc(e.name)} ↗</a></b>
-              <span class="muted small">${esc(META.entityKinds[e.kind] || e.kind)} · ${esc(e.country)} · ${esc(e.region)}</span><br>
+              <span class="muted small">${esc(META.entityKinds[e.kind] || e.kind)} · ${esc(country(e.country))} · ${esc(META.regions[e.region] || e.region)} · ${esc(t('level {n}+', { n: e.tier || 1 }))}</span><br>
               <span class="tags">${e.creatorTypes.map((c) => `<span class="tag">${esc(META.creators[c]?.label || c)}</span>`).join('')}
                 <span class="tag">${esc(META.submissionModes[e.submission])}</span><span class="model model-${esc(e.model)}">${esc(META.models[e.model]?.label || e.model)}</span></span></div>
             <div class="ent-actions">
               <select data-stage>${options(META.entityStages, e.stage)}</select>
-              <label class="check small"><input type="checkbox" data-verified ${e.verified ? 'checked' : ''}> zweryfikowany</label>
-              <label class="check small"><input type="checkbox" data-public ${e.publicListing ? 'checked' : ''} ${e.verified ? '' : 'disabled'}> publiczny</label>
+              <label class="check small"><input type="checkbox" data-verified ${e.verified ? 'checked' : ''}> ${esc(t('verified'))}</label>
+              <label class="check small"><input type="checkbox" data-public ${e.publicListing ? 'checked' : ''} ${e.verified ? '' : 'disabled'}> ${esc(t('public'))}</label>
             </div>
           </div>
-          ${e.notes ? `<div class="muted small">${esc(e.notes)}</div>` : ''}
+          ${e.note ? `<div class="muted small">${esc(e.note)}</div>` : ''}
           <div class="cta-row">
-            <button class="btn small" data-outreach="pl">✉ Outreach PL</button>
-            <button class="btn small" data-outreach="en">✉ Outreach EN</button>
-            ${e.outletId ? `<a class="btn small" href="#/miejsce/${esc(e.outletId)}">W katalogu →</a>` : '<button class="btn small primary" data-convert>🤝 Partner → katalog</button>'}
-            <button class="btn small ghost" data-remove>Usuń</button>
+            <button class="btn small" data-outreach="en">✉ ${esc(t('Outreach EN'))}</button>
+            <button class="btn small" data-outreach="pl">✉ ${esc(t('Outreach PL'))}</button>
+            ${e.outletId ? `<a class="btn small" href="#/outlet/${esc(e.outletId)}">${esc(t('In the catalog →'))}</a>` : `<button class="btn small primary" data-convert>🤝 ${esc(t('Partner → catalog'))}</button>`}
+            <button class="btn small ghost" data-remove>${esc(t('Delete'))}</button>
           </div>
         </div>`).join('');
     }
@@ -1108,14 +1146,13 @@
     list.addEventListener('change', async (ev) => {
       const row = ev.target.closest('[data-ent]');
       if (!row) return;
-      const id = row.dataset.ent;
       const body = {};
       if (ev.target.matches('[data-stage]')) body.stage = ev.target.value;
       if (ev.target.matches('[data-verified]')) body.verified = ev.target.checked;
       if (ev.target.matches('[data-public]')) body.publicListing = ev.target.checked;
       try {
-        await api('PATCH', `/api/admin/entities/${id}`, body, h);
-        toast('Zapisano.');
+        await api('PATCH', `/api/admin/entities/${row.dataset.ent}`, body, h);
+        toast(t('Saved.'));
         if (body.verified !== undefined) load();
       } catch (e) { toast(e.message, true); }
     });
@@ -1128,21 +1165,21 @@
         if (ev.target.matches('[data-outreach]')) {
           const o = await api('GET', `/api/admin/entities/${id}/outreach?lang=${ev.target.dataset.outreach}`, null, h);
           const box = document.getElementById('outreach');
-          box.innerHTML = `<div class="panel"><div class="sub-head"><h3>✉ ${esc(o.subject)}</h3><button class="btn small" id="copyOut">Kopiuj</button></div><textarea id="outBody" rows="14">${esc(o.body)}</textarea></div>`;
+          box.innerHTML = `<div class="panel"><div class="sub-head"><h3>✉ ${esc(o.subject)}</h3><button class="btn small" id="copyOut">${esc(t('Copy'))}</button></div><textarea rows="14">${esc(o.body)}</textarea></div>`;
           document.getElementById('copyOut').addEventListener('click', async () => {
-            try { await navigator.clipboard.writeText(`${o.subject}\n\n${o.body}`); toast('Skopiowano.'); } catch { toast('Zaznacz i skopiuj ręcznie.', true); }
+            try { await navigator.clipboard.writeText(`${o.subject}\n\n${o.body}`); toast(t('Copied.')); } catch { toast(t('Select and copy manually.'), true); }
           });
           box.scrollIntoView({ behavior: 'smooth' });
         } else if (ev.target.matches('[data-convert]')) {
-          if (!confirm('Podmiot zgodził się na współpracę? Utworzyć miejsce w katalogu?')) return;
-          const contactEmail = row.dataset.email || prompt('E-mail kontaktowy partnera (trafią na niego zgłoszenia i powiadomienia):', '');
+          if (!confirm(t('Has this entity agreed to work with you? Create a catalog outlet?'))) return;
+          const contactEmail = row.dataset.email || prompt(t('Partner contact e-mail (submissions and notifications go there):'), '');
           if (!contactEmail) return;
           const r = await api('POST', `/api/admin/entities/${id}/convert`, { contactEmail }, h);
-          document.getElementById('outreach').innerHTML = `<div class="notice ok"><b>${esc(r.outlet.name)}</b> jest partnerem w katalogu. Przekaż dane dostępowe do panelu kuratora (zostaną pokazane tylko raz):<br><br>ID: <span class="key">${esc(r.outlet.id)}</span><br><br>Klucz kuratora: <span class="key">${esc(r.manageKey)}</span><br><br>Kurator ustawi gatunki, zasięg i dokładne warunki w swoim panelu.</div>`;
+          document.getElementById('outreach').innerHTML = `<div class="notice ok"><b>${esc(r.outlet.name)}</b> ${esc(t('is now a catalog partner. Share the curator panel access (shown only once):'))}<br><br>ID: <span class="key">${esc(r.outlet.id)}</span><br><br>${esc(t('Curator key:'))} <span class="key">${esc(r.manageKey)}</span><br><br>${esc(t('The curator sets genres, reach and exact terms in their panel.'))}</div>`;
           document.getElementById('outreach').scrollIntoView({ behavior: 'smooth' });
           load();
         } else if (ev.target.matches('[data-remove]')) {
-          if (!confirm('Usunąć podmiot z bazy?')) return;
+          if (!confirm(t('Delete this entity from the database?'))) return;
           await api('DELETE', `/api/admin/entities/${id}`, null, h);
           load();
         }
@@ -1152,10 +1189,10 @@
     document.getElementById('exportCsv').addEventListener('click', async () => {
       try {
         const res = await fetch('/api/admin/entities/export', { headers: h });
-        if (!res.ok) throw new Error('Eksport nieudany.');
+        if (!res.ok) throw new Error(t('Export failed.'));
         const a = document.createElement('a');
         a.href = URL.createObjectURL(await res.blob());
-        a.download = `baza-podmiotow-${new Date().toISOString().slice(0, 10)}.csv`;
+        a.download = `global-database-${new Date().toISOString().slice(0, 10)}.csv`;
         a.click();
         setTimeout(() => URL.revokeObjectURL(a.href), 1000);
       } catch (e) { toast(e.message, true); }
@@ -1167,7 +1204,7 @@
     document.getElementById('importCsv').addEventListener('click', async () => {
       try {
         const r = await api('POST', '/api/admin/entities/import', { csv: document.getElementById('csvText').value }, h);
-        toast(`Dodano ${r.added}, pominięto ${r.skipped}.`);
+        toast(t('Added {a}, skipped {s}.', { a: r.added, s: r.skipped }));
         if (r.errors.length) document.getElementById('outreach').innerHTML = `<div class="notice warn">${r.errors.map(esc).join('<br>')}</div>`;
         load();
       } catch (e) { toast(e.message, true); }
@@ -1175,39 +1212,71 @@
     onSubmit(document.getElementById('addEnt'), async (d, fm) => {
       await api('POST', '/api/admin/entities', { ...d, creatorTypes: [d.creatorTypes] }, h);
       fm.reset();
-      toast('Dodano podmiot.');
+      toast(t('Entity added.'));
       load();
     });
-    let t;
-    form.addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => load().catch((e) => toast(e.message, true)), 250); });
+    let timer;
+    form.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(() => load().catch((e) => toast(e.message, true)), 250); });
     form.addEventListener('submit', (e) => e.preventDefault());
     await load();
+  }
+
+  // ---------- chrome: navigation, language switch, footer ----------
+  const NAV = [
+    ['#/campaign', () => `🎼 ${esc(t('Campaign'))}`],
+    ['#/catalog', () => esc(t('Catalog'))],
+    ['#/match', () => esc(t('Match'))],
+    ['#/channels', () => esc(t('Channels'))],
+    ['#/send', () => `${esc(t('Send'))} <span class="badge" id="cartCount" hidden>0</span>`],
+    ['#/creator', () => esc(t('Creator Path'))],
+    ['#/curators', () => esc(t('For curators'))],
+  ];
+
+  function renderChrome() {
+    document.documentElement.lang = LANG;
+    document.getElementById('nav').innerHTML = NAV.map(([href, label]) => `<a href="${href}">${label()}</a>`).join('');
+    document.getElementById('langSwitch').innerHTML = ['en', 'pl'].map((l) => `<button type="button" data-lang="${l}" class="${l === LANG ? 'active' : ''}" aria-pressed="${l === LANG}">${l.toUpperCase()}</button>`).join('');
+    document.getElementById('footer').innerHTML = `
+      <p>${esc(t('Promo Hub · promotion built on collaboration'))} · <a href="#/admin">${esc(t('admin'))}</a></p>
+      <p class="muted small">${esc(t('Paid guaranteed playlist placements break streaming platforms’ rules. On Promo Hub you pay a commission on results or a review fee – never for placement itself.'))}</p>`;
+    updateCartBadge();
+  }
+
+  async function setLang(lang) {
+    if (lang === LANG) return;
+    LANG = lang;
+    storage.set('lang', lang);
+    META = await api('GET', '/api/meta');
+    renderChrome();
+    route();
   }
 
   // ---------- router ----------
   const routes = [
     [/^#?\/?$/, viewHome],
-    [/^#\/katalog$/, viewCatalog],
-    [/^#\/dopasuj$/, viewMatch],
-    [/^#\/miejsce\/([\w-]+)$/, viewOutlet],
-    [/^#\/wyslij$/, viewSubmit],
-    [/^#\/artysta$/, viewArtist],
-    [/^#\/artysta\/([\w-]+)$/, viewEpk],
-    [/^#\/kampania$/, viewCampaign],
-    [/^#\/kanaly$/, viewChannels],
-    [/^#\/kurator$/, viewCurator],
+    [/^#\/(catalog|katalog)$/, viewCatalog],
+    [/^#\/(match|dopasuj)$/, viewMatch],
+    [/^#\/(?:outlet|miejsce)\/([\w-]+)$/, viewOutlet],
+    [/^#\/(send|wyslij)$/, viewSubmit],
+    [/^#\/(creator|artysta)$/, viewCreator],
+    [/^#\/(?:creator|artysta)\/([\w-]+)$/, viewEpk],
+    [/^#\/(campaign|kampania)$/, viewCampaign],
+    [/^#\/(channels|kanaly)$/, viewChannels],
+    [/^#\/(curators|kurator)$/, viewCurators],
     [/^#\/admin$/, viewAdmin],
-    [/^#\/admin\/baza$/, viewAdminEntities],
+    [/^#\/admin\/(?:database|baza)$/, viewAdminEntities],
   ];
+  const ID_ROUTES = new Set([viewOutlet, viewEpk]);
 
   async function route() {
     const hash = location.hash || '#/';
-    document.querySelectorAll('nav a').forEach((a) => a.classList.toggle('active', hash.startsWith(a.getAttribute('href'))));
+    document.querySelectorAll('#nav a').forEach((a) => a.classList.toggle('active', hash.startsWith(a.getAttribute('href'))));
     document.getElementById('nav').classList.remove('open');
     const match = routes.find(([re]) => re.test(hash));
-    if (!match) { app.innerHTML = '<div class="empty">Nie znaleziono strony. <a href="#/">Strona główna</a></div>'; return; }
+    if (!match) { app.innerHTML = `<div class="empty">${esc(t('Page not found.'))} <a href="#/">${esc(t('Home'))}</a></div>`; return; }
     try {
-      await match[1](...hash.match(match[0]).slice(1));
+      const args = ID_ROUTES.has(match[1]) ? hash.match(match[0]).slice(1) : [];
+      await match[1](...args);
       app.focus({ preventScroll: true });
       window.scrollTo(0, 0);
     } catch (e) {
@@ -1220,11 +1289,15 @@
     nav.classList.toggle('open');
     e.currentTarget.setAttribute('aria-expanded', nav.classList.contains('open'));
   });
+  document.getElementById('langSwitch').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-lang]');
+    if (b) setLang(b.dataset.lang).catch((err) => toast(err.message, true));
+  });
 
   (async () => {
     META = await api('GET', '/api/meta');
-    updateCartBadge();
+    renderChrome();
     window.addEventListener('hashchange', route);
     route();
-  })().catch((e) => { app.innerHTML = `<div class="empty">Nie udało się połączyć z serwerem: ${esc(e.message)}</div>`; });
+  })().catch((e) => { app.innerHTML = `<div class="empty">${esc(t('Could not connect to the server:'))} ${esc(e.message)}</div>`; });
 })();

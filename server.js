@@ -15,9 +15,9 @@ if (store.isEmpty() && process.env.SEED !== '0') seed(store);
 if (!store.data.entities.length && process.env.SEED !== '0') seedEntitiesInto(store);
 
 if (!process.env.ADMIN_TOKEN) {
-  console.warn('Uwaga: brak ADMIN_TOKEN – panel administratora jest wyłączony.');
+  console.warn('Warning: ADMIN_TOKEN is not set – the admin panel is disabled.');
 }
 
 http.createServer(createApp(store)).listen(PORT, () => {
-  console.log(`Promo Hub działa: http://localhost:${PORT}`);
+  console.log(`Promo Hub running at http://localhost:${PORT}`);
 });

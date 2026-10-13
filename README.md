@@ -1,70 +1,71 @@
 # Promo Hub
 
-Platforma łącząca artystów z miejscami promocji muzyki – playlistami, radiami FM i internetowymi, kanałami YouTube, twórcami TikTok/Instagram, blogami, podcastami, newsletterami, DJ-ami, klubami i festiwalami, TV, sync i wytwórniami – na zasadach **współpracy**: prowizja od efektu, podział przychodów, opłata za odsłuch lub barter.
+A platform that takes independent **musicians, DJs/producers and writers/authors/poets** from their first release to international recognition. It connects creators with playlists, FM and online radio, YouTube channels, TikTok/Instagram/BookTok creators, blogs, magazines, podcasts, newsletters, DJs and record pools, clubs and festivals, TV, sync libraries, labels and publishers – on **collaboration terms**: commission on results, revenue share, a review fee or barter.
 
-Strategia, mapa rynku i partnerów: [docs/STRATEGIA.md](docs/STRATEGIA.md).
+The UI is **English by default with a PL switcher** (EN | PL in the header). The API returns content in the language sent in the `x-lang` header (`en` / `pl`) or `?lang=`.
 
-## Dla kogo
+Strategy, market map and partner plan (PL): [docs/STRATEGIA.md](docs/STRATEGIA.md).
 
-**Muzycy / zespoły, DJ-e / producenci, pisarze / autorzy / poeci** – każdy typ twórcy ma własne gatunki, typy miejsc, kanały oficjalne, fale kampanii i kroki rozwoju. Nowy typ (np. podcaster) = jeden wpis w `lib/creators.js` + kanały w `lib/channels.js` + kroki w `lib/playbook.js`.
+## Key features
 
-## Najważniejsze mechanizmy
-
-- **Master Dyrygent A–Z** (`#/kampania`) – dzieło + data premiery + budżet (także 0 zł) → dobór miejsc z każdej sekcji, **Plan A–Z: 45–60 zadań w 9 fazach** (Fundament → Materiały → Prawa i metadane → Dystrybucja → Pre-premiera → Premiera → Po premierze → Długi ogon → Skalowanie), oficjalne kanały, Światowa Baza, automatyczna wysyłka zgłoszeń falami; eksport `.ics`; generator pitchu z `{nazwa}` / `{gatunki}`.
-- **Symulator kampanii (Monte Carlo)** – przed startem: scenariusz ostrożny/typowy/optymistyczny (p10/p50/p90) i szansa awansu na kolejny poziom, liczone z realnych wskaźników kuratorów.
-- **Autopilot kariery** – uszeregowana lista „następnych najlepszych ruchów”: zaległe zadania, raporty przychodu, luki w profilu, cele poziomu z podpowiedziami miejsc, podmioty ze Światowej Bazy.
-- **Światowa Baza Podmiotów** (`#/admin/baza`) – 190 realnych podmiotów z 25 krajów (radio, media, festiwale, wydawcy, sync, pule DJ-skie, społeczności czytelników…) jako **prospekty** do pozyskania: CRM z etapami, generator outreach PL/EN, import/eksport CSV, konwersja w partnera katalogu. Zweryfikowane i oznaczone jako publiczne trafiają do Planu A–Z twórców.
-- **Efekt domina** – akceptacja w kampanii automatycznie wysyła dzieło do większych, dostępnych miejsc z dowodem społecznym w pitchu.
-- **Pula Efektu** – przychód dzieła raportowany raz, prowizja dzielona między kuratorów, łącznie maks. `TRACK_COMMISSION_CAP_PERCENT` %.
-- **Ścieżka artysty** (`#/artysta`) – 5 poziomów z mierzalnymi progami, plan kroków, publiczny press kit (`#/artysta/<slug>`).
-- **Drabina dostępu** – miejsca mogą wymagać minimalnego poziomu twórcy.
+- **Master Conductor A–Z** (`#/campaign`) – work + release date + budget (even 0) → outlets from every section, an **A–Z plan of 45–60 tasks in 9 phases** (Foundation → Assets → Rights & metadata → Distribution → Pre-release → Release → Post-release → Long tail → Scaling), official channels, the Global Database and **automatic submission waves**; `.ics` export; pitch generator with `{name}` / `{genres}`.
+- **Campaign Simulator (Monte Carlo)** – before launch: cautious/likely/optimistic outcomes (p10/p50/p90) and the chance to reach the next level, from real curator metrics.
+- **Career Autopilot** – a ranked list of “next best moves”: overdue tasks, revenue reports, profile gaps, level goals with outlet suggestions, entities from the Global Database.
+- **Domino effect** – an acceptance in a campaign automatically sends the work to bigger outlets the creator has unlocked, with social proof in the pitch.
+- **Effect Pool** – revenue of a work is reported once and split between curators; total commission is capped at `TRACK_COMMISSION_CAP_PERCENT` %.
+- **Creator Path** (`#/creator`) – 5 levels with measurable thresholds, next steps and a public press kit (`#/creator/<slug>`).
+- **Access Ladder** – outlets can require a minimum creator level.
+- **Guaranteed response** – submissions without a decision expire and lower the curator’s ranking.
 
 ## Global Entity Database – where to find it
 
-- **Excel:** [`database/global-database.xlsx`](database/global-database.xlsx) – "Summary" sheet (counts) + "Database" sheet (every entity, filters, clickable links, notes EN/PL).
-- **CSV:** [`database/global-database.csv`](database/global-database.csv) – same columns as the admin import, so you can edit it in a spreadsheet and import it back.
-- **In the app:** admin panel → Global Database (`#/admin/baza`) – CRM, filters, outreach, CSV export/import.
+**548 real organizations from 46 countries** (radio, media, live sessions, showcase festivals, labels, record pools, distributors, collecting societies, grants/export offices, publishers, literary magazines, book fairs, e-book/audio platforms). They are **prospects to approach, not partners** – submission terms are based on public information and must be verified before an entity is made public.
+
+- **Excel:** [`database/global-database.xlsx`](database/global-database.xlsx) – “Summary” sheet (live counts) + “Database” sheet (every entity, filters, clickable links, notes EN/PL).
+- **CSV:** [`database/global-database.csv`](database/global-database.csv) – same columns as the admin import; edit in a spreadsheet and import back.
+- **In the app:** admin panel → Global Database (`#/admin/database`) – CRM stages, filters, outreach e-mails (EN/PL), CSV import/export, conversion into catalog partners.
 - **Regenerate the files:** `npm run export:db && python3 scripts/export-database-xlsx.py`
 - **Grow it:** [`docs/AGENT_PROMPT_DATABASE_RESEARCH.md`](docs/AGENT_PROMPT_DATABASE_RESEARCH.md) – a step-by-step prompt for an AI research agent; its CSV output imports directly.
 
-## Uruchomienie
+## Running
 
 ```bash
-ADMIN_TOKEN=twoj-sekret PLATFORM_FEE_PERCENT=20 npm start   # http://localhost:3000
+ADMIN_TOKEN=your-secret PLATFORM_FEE_PERCENT=20 npm start   # http://localhost:3000
 npm test
 ```
 
-Bez zależności zewnętrznych (Node ≥ 18). Dane trzymane są w `data/db.json` (zmienna `DB_FILE`). Przy pustej bazie ładowane są **przykładowe, fikcyjne** miejsca katalogu oraz Światowa Baza realnych podmiotów jako prospekty (`SEED=0` wyłącza oba).
+No external dependencies (Node ≥ 18). Data is stored in `data/db.json` (`DB_FILE`). On an empty database the server loads **fictional sample outlets** and the Global Database prospects (`SEED=0` disables both).
 
-> Światowa Baza zawiera realne podmioty z ich oficjalnymi stronami, ale **nie** są one partnerami platformy. Tryb zgłoszeń i warunki pochodzą z wiedzy publicznej i mogą być nieaktualne – zweryfikuj je przed oznaczeniem podmiotu jako publiczny.
-
-| Zmienna | Opis |
+| Variable | Description |
 |---|---|
-| `PORT` | port HTTP (domyślnie 3000) |
-| `ADMIN_TOKEN` | token panelu administratora (`#/admin`); bez niego panel jest wyłączony |
-| `PLATFORM_FEE_PERCENT` | prowizja platformy od każdej prowizji kuratora i opłaty za odsłuch (domyślnie 20) |
-| `TRACK_COMMISSION_CAP_PERCENT` | limit łącznej prowizji wszystkich kuratorów jednego utworu (domyślnie 30) |
-| `DB_FILE` | ścieżka pliku bazy |
+| `PORT` | HTTP port (default 3000) |
+| `ADMIN_TOKEN` | admin panel token (`#/admin`); without it the panel is disabled |
+| `PLATFORM_FEE_PERCENT` | platform share of every curator commission and review fee (default 20) |
+| `TRACK_COMMISSION_CAP_PERCENT` | cap on the total commission of all curators of one work (default 30) |
+| `DB_FILE` | database file path |
 
-## Jak zarabia platforma
+## How the platform earns
 
-Platforma pobiera `PLATFORM_FEE_PERCENT` % z każdej prowizji kuratora (model prowizyjny i podział przychodów) oraz z każdej opłaty za odsłuch. Warunki – w tym stawka platformy – są zamrażane w chwili zgłoszenia. Zarobki widać w panelu admina.
+The platform keeps `PLATFORM_FEE_PERCENT` % of every curator commission (commission and revenue-share models) and of every review fee. Terms – including the platform fee – are frozen at submission time. Earnings are shown in the admin panel.
 
-## Role i dostęp
+## Roles and access
 
-- **Artysta** – po pierwszym zgłoszeniu dostaje *klucz artysty* (panel: status zgłoszeń, feedback, raportowanie przychodów, wyliczanie prowizji).
-- **Kurator** – po dodaniu miejsca dostaje *ID + klucz kuratora* (skrzynka zgłoszeń, decyzje, potwierdzanie wpłat, edycja warunków).
-- **Admin** – `ADMIN_TOKEN` (weryfikacja miejsc, zarobki platformy, ranking skuteczności).
+- **Creator** – gets a *creator key* after registering or the first submission (panel: Autopilot, Creator Path, campaigns, submissions, revenue reports).
+- **Curator** – gets an *outlet ID + curator key* after listing an outlet (inbox, decisions, payment confirmations, terms).
+- **Admin** – `ADMIN_TOKEN` (outlet verification, platform earnings, Global Database CRM).
 
-Klucze są przechowywane wyłącznie jako skróty SHA-256.
+Keys are stored only as SHA-256 hashes.
 
-## Zasady
+## Translations
 
-- Gwarancja odpowiedzi: zgłoszenie bez decyzji po `responseDays` wygasa i obniża ranking kuratora.
-- Ranking dopasowania (0–100): gatunek, % akceptacji, % odpowiedzi w terminie, weryfikacja, zasięg, brak kosztów z góry.
-- Model „opłata za odsłuch” nie gwarantuje umieszczenia – płatne gwarantowane miejsca na playlistach łamią regulaminy platform streamingowych.
+- UI: English strings in `public/app.js` go through `t()`; Polish translations live in `public/i18n-pl.js`. `test/i18n.test.js` fails if a string has no translation or the `{placeholders}` differ.
+- Server content (outlet types, models, channels, the A–Z plan, levels, Autopilot, errors) is stored as `{ en, pl }` and localized right before the response is sent (`lib/i18n.js`).
 
-## Do zrobienia przed produkcją
+## Before production
 
-- Integracja płatności (np. Stripe / Przelewy24) dla opłat i prowizji – obecnie kwoty są naliczane i potwierdzane ręcznie.
-- Powiadomienia e-mail, limitowanie żądań, kopie zapasowe bazy (lub migracja na PostgreSQL).
+- Payments (e.g. Stripe / Przelewy24) for fees and commissions – amounts are currently calculated and confirmed manually.
+- Revenue import from distributors instead of self-reporting; e-mail notifications; rate limiting; backups (or PostgreSQL).
+
+---
+
+**PL:** Strona domyślnie jest po angielsku – przełącznik **EN | PL** jest w nagłówku, a wybór języka jest zapamiętywany. Baza podmiotów do pobrania: `database/global-database.xlsx` (Excel) i `database/global-database.csv`. Strategia i mapa rynku: `docs/STRATEGIA.md`.

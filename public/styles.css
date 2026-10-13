@@ -49,9 +49,13 @@ p { margin: 0 0 1em; }
   background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff;
 }
 nav { margin-left: auto; display: flex; gap: .25rem; flex-wrap: wrap; }
+.lang-switch { display: inline-flex; border: 1px solid var(--border); border-radius: 9px; overflow: hidden; flex: none; }
+.lang-switch button { background: transparent; border: 0; color: var(--muted); font: inherit; font-size: .8rem; font-weight: 700; padding: .35rem .6rem; cursor: pointer; }
+.lang-switch button.active { background: var(--accent); color: #fff; }
+.lang-switch button:focus-visible { outline: 2px solid var(--accent-2); outline-offset: -2px; }
 nav a { color: var(--muted); padding: .45rem .75rem; border-radius: 8px; }
 nav a:hover, nav a.active { color: var(--text); background: var(--surface-2); text-decoration: none; }
-.menu-btn { display: none; margin-left: auto; background: none; border: 0; color: var(--text); font-size: 1.5rem; }
+.menu-btn { display: none; background: none; border: 0; color: var(--text); font-size: 1.5rem; }
 .badge { background: var(--accent); color: #fff; border-radius: 99px; padding: 0 .45rem; font-size: .75rem; font-weight: 700; }
 
 main { flex: 1; width: 100%; max-width: 1180px; margin: 0 auto; padding: 1.5rem 1rem 3rem; outline: none; }
@@ -224,6 +228,7 @@ details.inline[open] { display: block; width: 100%; }
 }
 @media (max-width: 720px) {
   .menu-btn { display: block; }
+  .lang-switch { margin-left: auto; }
   nav { display: none; position: absolute; top: 100%; left: 0; right: 0; flex-direction: column; background: var(--bg); border-bottom: 1px solid var(--border); padding: .5rem; }
   nav.open { display: flex; }
   .row { grid-template-columns: 1fr; }
