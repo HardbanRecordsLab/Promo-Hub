@@ -121,6 +121,45 @@
     return `<span class="model model-${esc(c.model)}">${esc(label)}${esc(detail)}</span>`;
   }
 
+  function oddsView(odds) {
+    if (!odds) return '';
+    const conf = { low: t('low confidence'), medium: t('medium confidence'), high: t('high confidence') }[odds.confidence];
+    const lvl = odds.percent >= 40 ? 'hi' : odds.percent >= 15 ? 'mid' : 'lo';
+    return `<div class="odds odds-${lvl}"><b>🎯 ${odds.percent}%</b> ${esc(t('chance of acceptance'))}
+      <span class="muted small">· ${esc(conf)} (${esc(t('{n} decisions', { n: odds.basis }))})</span>
+      ${odds.tips.length ? `<div class="small">💡 ${esc(odds.tips[0])}</div>` : ''}</div>`;
+  }
+
+  // Feedback tags as chips; `numbered` adds 1–9 shortcuts for the quick review.
+  function tagChips(ct, selected = [], { numbered = false } = {}) {
+    const tags = Object.entries(META.feedbackTags).filter(([, f]) => f.for.includes(ct || 'music'));
+    const ordered = [...tags.filter(([, f]) => f.kind === 'strength'), ...tags.filter(([, f]) => f.kind === 'fix')];
+    const chip = ([id, f]) => {
+      const n = ordered.findIndex(([x]) => x === id) + 1;
+      return `<label class="chip ${f.kind}"><input type="checkbox" name="tag" value="${esc(id)}" ${selected.includes(id) ? 'checked' : ''}>${numbered && n <= 9 ? `<kbd>${n}</kbd> ` : ''}${esc(f.label)}</label>`;
+    };
+    return `<div class="chips"><span class="muted small">${esc(t('Strengths'))}</span>${ordered.filter(([, f]) => f.kind === 'strength').map(chip).join('')}</div>
+      <div class="chips"><span class="muted small">${esc(t('To improve'))}</span>${ordered.filter(([, f]) => f.kind === 'fix').map(chip).join('')}</div>`;
+  }
+  const checkedTags = (form) => [...form.querySelectorAll('[name=tag]:checked')].map((x) => x.value);
+
+  function embedUrl(u) {
+    try {
+      const x = new URL(u);
+      const host = x.hostname.replace(/^(www|m|music)\./, '');
+      if (host === 'youtube.com' || host === 'youtu.be') {
+        const id = host === 'youtu.be' ? x.pathname.slice(1) : x.searchParams.get('v');
+        if (id) return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}?start=30`;
+      }
+      if (host === 'open.spotify.com') {
+        const m = x.pathname.match(/^\/(?:intl-[\w-]+\/)?(track|album|episode|playlist)\/(\w+)/);
+        if (m) return `https://open.spotify.com/embed/${m[1]}/${m[2]}`;
+      }
+      if (host === 'soundcloud.com') return `https://w.soundcloud.com/player/?url=${encodeURIComponent(u)}`;
+    } catch { /* not a URL */ }
+    return null;
+  }
+
   function outletCard(o) {
     const sel = cart.has(o.id);
     const st = o.stats || {};
@@ -138,6 +177,7 @@
           ${modelBadge(o.collaboration)}
         </div>
         ${match}
+        ${oddsView(o.odds)}
         <div class="meta">
           <span>👥 ${o.reach ? num(o.reach) : '—'}</span>
           <span>⏱ ${esc(t('reply within {n} days', { n: o.responseDays || 7 }))}</span>
@@ -168,7 +208,7 @@
     if (!sub.revenue.length) return `<p class="muted small">${esc(t('No revenue reported yet.'))}</p>`;
     return `<table class="rev"><thead><tr><th>${esc(t('Period'))}</th><th>${esc(t('Revenue'))}</th><th>${esc(t('Commission'))}</th><th>${esc(t('Status'))}</th></tr></thead><tbody>
       ${sub.revenue.map((r) => `<tr>
-        <td>${esc(r.period)}</td><td>${money(r.amountPLN)}</td>
+        <td>${esc(r.period)}${r.kind === 'discovery' ? `<div class="small">🔭 ${esc(t('discovery share'))}: ${esc(r.trackTitle)}</div>` : ''}</td><td>${money(r.amountPLN)}</td>
         <td>${r.inAgreement ? `${money(r.commissionPLN)}${r.poolSize > 1 ? ` <span class="muted small">(${esc(t('Pool: {rate}%, {n} curators', { rate: r.effectiveRatePercent, n: r.poolSize }))})</span>` : ''}` : `<span class="muted">${esc(t('outside the agreement'))}</span>`}</td>
         <td>${r.commissionPLN ? (r.paid ? `<span class="yes">${esc(t('paid'))}</span>` : (curatorKey ? `<button class="btn small" data-paid="${esc(sub.id)}|${esc(r.id)}">${esc(t('Confirm payment'))}</button>` : esc(t('due')))) : '—'}</td>
       </tr>`).join('')}
@@ -222,6 +262,10 @@
             <tr><td>${esc(t('Global Database – radio, media, festivals, publishers, sync in many countries'))}</td><td class="yes">${esc(t('in your Conductor plan'))}</td><td class="no">—</td></tr>
             <tr><td>${esc(t('Domino effect: an acceptance automatically opens bigger outlets'))}</td><td class="yes">${esc(t('yes, with social proof in the pitch'))}</td><td class="no">—</td></tr>
             <tr><td>${esc(t('Effect Pool: total commission per work is capped'))}</td><td class="yes">${esc(t('max {n}% no matter how many curators', { n: META.trackCommissionCapPercent }))}</td><td class="no">—</td></tr>
+            <tr><td>${esc(t('Chance of acceptance before you send – from each curator’s real decisions'))}</td><td class="yes">${esc(t('yes, for every outlet'))}</td><td class="no">—</td></tr>
+            <tr><td>${esc(t('One “what to fix” report from the feedback of every curator'))}</td><td class="yes">${esc(t('yes, with concrete advice'))}</td><td class="no">${esc(t('scattered single comments'))}</td></tr>
+            <tr><td>${esc(t('Verified creator passport with Momentum score'))}</td><td class="yes">${esc(t('every placement has a public code'))}</td><td class="no">—</td></tr>
+            <tr><td>${esc(t('Curators earn a discovery share for finding you first'))}</td><td class="yes">${esc(t('{n}% for {m} months, inside the cap', { n: META.discoverySharePercent, m: META.discoveryMonths }))}</td><td class="no">—</td></tr>
             <tr><td>${esc(t('Creator Path and Access Ladder'))}</td><td class="yes">${esc(t('5 levels, measurable goals, step plan'))}</td><td class="no">—</td></tr>
             <tr><td>${esc(t('Upfront cost for creators'))}</td><td class="yes">${esc(t('€0 on commission'))}</td><td class="no">${esc(t('credits for every submission'))}</td></tr>
             <tr><td>${esc(t('Curators earn when…'))}</td><td class="yes">${esc(t('the work generates revenue'))}</td><td class="no">${esc(t('they merely listen'))}</td></tr>
@@ -289,6 +333,7 @@
     app.innerHTML = `
       <h1>${esc(t('Match outlets to your work'))}</h1>
       <p class="muted">${esc(t('The 0–100 ranking combines genre fit, curator performance (% accepted), reliability (% answered on time), verification, reach and whether you pay upfront.'))}</p>
+      <p class="notice">🎯 ${esc(t('New: the chance of acceptance for every outlet – calculated from its real decisions, your genre and your level – before you send anything.'))}</p>
       <form class="filters" id="mf">
         ${creatorSelect(ct)}
         <select name="genre" required>${genreOptions(ct, last, t('Choose a genre'))}</select>
@@ -302,7 +347,8 @@
     async function run() {
       const d = formData(form);
       storage.set('matchGenre', d.genre);
-      const { outlets } = await api('GET', `/api/match?${new URLSearchParams({ genre: d.genre, type: d.type, model: d.model, creator: d.creatorType })}`);
+      const key = storage.get('artistKey');
+      const { outlets } = await api('GET', `/api/match?${new URLSearchParams({ genre: d.genre, type: d.type, model: d.model, creator: d.creatorType })}`, null, key ? { 'x-artist-key': key } : {});
       const render = () => {
         res.innerHTML = outlets.length
           ? `<div class="cta-row"><button class="btn" id="addTop">+ ${esc(t('Add the top 10 to your submission'))}</button><a class="btn primary" href="#/send">${esc(t('Go to sending →'))}</a></div><br>
@@ -646,8 +692,69 @@
       </div>
       <div class="split">
         <div class="panel"><h2>${esc(t('Bio'))}</h2><p>${bio ? esc(bio) : '<span class="muted">—</span>'}</p>${p.achievements ? `<h3>${esc(t('Achievements'))}</h3><p>${esc(p.achievements)}</p>` : ''}</div>
-        <div class="panel"><h2>${esc(t('Featured by'))}</h2>${d.placements.length ? d.placements.map((x) => `<p><b>${esc(x.trackTitle)}</b> → ${esc(x.outletName)} <span class="muted small">${esc(META.types[x.outletType] || '')}${x.country ? ` · ${esc(country(x.country))}` : ''}</span>${x.placementUrl ? ` <a href="${esc(x.placementUrl)}" target="_blank" rel="noopener noreferrer nofollow">↗</a>` : ''}</p>`).join('') : `<p class="muted">${esc(t('First placements on the way.'))}</p>`}</div>
-      </div>`;
+        <div class="panel"><h2>${esc(t('Featured by'))}</h2>${d.placements.length ? d.placements.map((x) => `<p><b>${esc(x.trackTitle)}</b> → ${esc(x.outletName)} <span class="muted small">${esc(META.types[x.outletType] || '')}${x.country ? ` · ${esc(country(x.country))}` : ''}</span>${x.placementUrl ? ` <a href="${esc(x.placementUrl)}" target="_blank" rel="noopener noreferrer nofollow">↗</a>` : ''} <a class="tag tag-ok" href="#/verify/${esc(x.code)}" title="${esc(t('Verify this placement'))}">✔ ${esc(x.code)}</a></p>`).join('') : `<p class="muted">${esc(t('First placements on the way.'))}</p>`}</div>
+      </div>
+      ${passportView(d.passport)}`;
+  }
+
+  function momentumBars(parts) {
+    const max = { placements: 250, reach: 250, breadth: 150, quality: 100, recency: 150, opinions: 100 };
+    const names = { placements: t('placements'), reach: t('reach'), breadth: t('breadth (types + countries)'), quality: t('verified outlets'), recency: t('last 90 days'), opinions: t('curator opinions') };
+    return `<div class="bars">${Object.entries(parts).map(([k, v]) => `<div class="bar"><span>${esc(names[k] || k)}</span><progress max="${max[k]}" value="${v}"></progress><b>${v}</b></div>`).join('')}</div>`;
+  }
+
+  function passportView(p) {
+    if (!p) return '';
+    return `<div class="panel passport">
+      <h2>🛂 ${esc(t('Verified creator passport'))}</h2>
+      <p><b class="big-num">${p.momentum}</b><span class="muted">/1000 Momentum</span> <span class="level">${esc(p.tierName)}</span></p>
+      ${p.discoveredBy ? `<p>🔭 ${esc(t('Discovered by {name} on {date}', { name: p.discoveredBy.outletName, date: date(p.discoveredBy.at) }))}</p>` : ''}
+      ${p.strengths.length ? `<div class="tags">${p.strengths.map((x) => `<span class="tag tag-ok">★ ${esc(x.label)} ×${x.count}</span>`).join('')}</div><br>` : ''}
+      ${momentumBars(p.parts)}
+      <p class="muted small">${esc(t('Every placement has a code anyone – a label, booker or festival – can verify on Promo Hub. Nothing here is self-declared.'))}</p>
+    </div>`;
+  }
+
+  async function viewVerify(code) {
+    const d = await api('GET', `/api/verify/${encodeURIComponent(code)}`);
+    app.innerHTML = d.valid
+      ? `<h1>✔ ${esc(t('Placement verified'))}</h1>
+        <div class="panel">
+          <p class="muted small">${esc(t('Code'))}: <span class="key">${esc(d.code)}</span></p>
+          <h2>${d.artistSlug ? `<a href="#/creator/${esc(d.artistSlug)}">${esc(d.artistName)}</a>` : esc(d.artistName)} – ${esc(d.trackTitle)}</h2>
+          <p>→ <b>${esc(d.outletName)}</b> <span class="muted">${esc(META.types[d.outletType] || '')}${d.country ? ` · ${esc(country(d.country))}` : ''}</span> ${d.outletVerified ? `<span class="verified">✔ ${esc(t('verified partner'))}</span>` : ''}</p>
+          <p>${statusBadge(d.status)} <span class="muted">${esc(t('since {date}', { date: date(d.placedAt) }))}</span> ${d.discovery ? `<span class="tag">🔭 ${esc(t('first outlet to accept this creator'))}</span>` : ''}</p>
+          ${d.placementUrl ? `<p><a href="${esc(d.placementUrl)}" target="_blank" rel="noopener noreferrer nofollow">${esc(t('See the placement'))} ↗</a></p>` : ''}
+          <p class="muted small">${esc(t('Recorded by Promo Hub when the curator accepted the work – it cannot be edited by the creator.'))}</p>
+        </div>`
+      : `<h1>✕ ${esc(t('Code not found'))}</h1><div class="empty">${esc(t('No placement with code {code}. Check the spelling – codes have 12 characters.', { code: d.code }))}</div>`;
+  }
+
+  function feedbackView(fr) {
+    if (!fr) return '';
+    const works = fr.works.filter((w) => w.reviewers || w.notes.length);
+    const verdict = {
+      fix: ['warn', t('Fix this first – several curators agree:')],
+      scale: ['ok', t('Curators like it – push it to more and bigger outlets.')],
+      mixed: ['', t('No consensus yet – collect a few more reviews.')],
+      waiting: ['', t('Waiting for the first reviews.')],
+    };
+    return `<h2>🧭 ${esc(t('What to fix – one report from every curator'))}</h2>
+      <div class="panel">
+        <p><b class="big-num">${fr.momentum.score}</b><span class="muted">/1000 Momentum</span> <span class="level">${esc(fr.momentum.tierName)}</span></p>
+        ${momentumBars(fr.momentum.parts)}
+      </div>
+      ${works.length ? works.map((w) => {
+        const [cls, text] = verdict[w.verdict];
+        return `<div class="panel">
+          <div class="sub-head"><h3>${esc(w.trackTitle)}</h3><span class="muted small">${esc(t('{r} curators reviewed · {p} placements · {s} sent', { r: w.reviewers, p: w.placed, s: w.sent }))}</span></div>
+          <div class="notice ${cls}"><b>${esc(text)}</b>
+            ${w.priorities.length ? `<ol>${w.priorities.map((x) => `<li><b>${esc(x.label)}</b> – ${esc(t('{n}% of curators', { n: x.sharePercent }))}<br><span class="muted">${esc(x.advice)}</span></li>`).join('')}</ol>` : ''}</div>
+          ${w.fixes.length ? `<div class="tags">${w.fixes.map((x) => `<span class="tag">✎ ${esc(x.label)} ×${x.count}</span>`).join('')}</div>` : ''}
+          ${w.strengths.length ? `<div class="tags">${w.strengths.map((x) => `<span class="tag tag-ok">★ ${esc(x.label)} ×${x.count}</span>`).join('')}</div>` : ''}
+          ${w.notes.length ? `<details><summary>${esc(t('Curator notes ({n})', { n: w.notes.length }))}</summary>${w.notes.map((n) => `<p class="small">💬 ${esc(n.note)} ${statusBadge(n.status)}</p>`).join('')}</details>` : ''}
+        </div>`;
+      }).join('') : `<p class="muted">${esc(t('Curator feedback will appear here as one report: what to fix first and what already works.'))}</p>`}`;
   }
 
   // ---------- creator panel ----------
@@ -748,10 +855,11 @@
     } catch (e) {
       if (!storage.get('newArtist')) { storage.del('artistKey'); toast(e.message, true); return viewCreator(); }
     }
-    const [subs, camps, ap] = await Promise.all([
+    const [subs, camps, ap, fr] = await Promise.all([
       api('GET', '/api/artist/submissions', null, h).then((r) => r.submissions).catch(() => []),
       api('GET', '/api/artist/campaigns', null, h).then((r) => r.campaigns).catch(() => []),
       api('GET', '/api/artist/next-actions', null, h).catch(() => null),
+      api('GET', '/api/artist/feedback-report', null, h).catch(() => null),
     ]);
     const profile = me && me.profile;
     const thisMonth = new Date().toISOString().slice(0, 7);
@@ -763,6 +871,7 @@
       ${storage.get('newArtist') && !profile ? `<div class="notice warn"><b>${esc(t('Save your creator key'))}</b> – ${esc(t('it is the only access to your panel:'))}<br><br><span class="key">${esc(key)}</span></div>` : ''}
       ${autopilotView(ap)}
       ${me ? careerView(me.career) : ''}
+      ${feedbackView(fr)}
       <details ${profile ? '' : 'open'}><summary><b>${esc(profile ? t('Edit profile and press kit') : t('Step 1: complete your profile and press kit'))}</b></summary><div class="panel">${profileForm(draft)}</div></details>
       <h2>${esc(t('Campaigns'))}</h2>
       ${camps.length ? '' : `<div class="empty">${esc(t('No campaigns yet.'))} <a href="#/campaign">${esc(t('Launch your first'))}</a> – ${esc(t('a €0 budget is enough.'))}</div>`}
@@ -783,6 +892,8 @@
           </div>
           <p class="small">${modelBadge(s.agreement)} ${s.reviewFee ? `<span class="muted">${esc(t('review fee:'))} ${money(s.reviewFee.amountPLN)}</span>` : ''}</p>
           ${s.curatorNote ? `<p class="notice">💬 ${esc(s.curatorNote)}</p>` : ''}
+          ${s.feedback ? `<div class="tags">${s.feedback.tags.map((x) => `<span class="tag ${META.feedbackTags[x].kind === 'strength' ? 'tag-ok' : ''}">${META.feedbackTags[x].kind === 'strength' ? '★' : '✎'} ${esc(META.feedbackTags[x].label)}</span>`).join('')}</div>` : ''}
+          ${s.discovery ? `<p class="small">🔭 ${esc(t('This outlet discovered you – it earns a {n}% discovery share until {to}.', { n: s.discovery.sharePercent, to: s.discoveryUntil }))}</p>` : ''}
           ${s.scheduledFor ? `<p class="small">📅 ${esc(t('Scheduled: {date}', { date: s.scheduledFor }))}</p>` : ''}
           ${s.placementUrl ? `<p class="small">🔗 <a href="${esc(s.placementUrl)}" target="_blank" rel="noopener noreferrer nofollow">${esc(t('See the placement'))}</a></p>` : ''}
           ${['new', 'listening'].includes(s.status) ? `<button class="btn small ghost" data-withdraw="${esc(s.id)}">${esc(t('Withdraw submission'))}</button>` : ''}
@@ -839,6 +950,7 @@
       } else {
         msg = r.entry.inAgreement ? t('Commission due: {n}', { n: money(r.entry.commissionPLN) }) : t('Outside the agreement period – no commission.');
       }
+      if (r.discovery) msg += ` ${t('Discovery share for {name}: {n}.', { name: r.discovery.outletName, n: money(r.discovery.commissionPLN) })}`;
       toast(msg);
       viewCreator();
     }));
@@ -919,6 +1031,11 @@
     app.innerHTML = `
       <h1>${esc(t('For curators, stations and creators'))}</h1>
       <p class="lead muted">${esc(t('Run a playlist, radio show, channel, blog, podcast, magazine or record pool? Join and earn by promoting work you genuinely like. You choose the model: commission on the work’s revenue, revenue share, review fee or barter.'))}</p>
+      <div class="steps">
+        <div class="step"><h3>🔭 ${esc(t('Discovery share'))}</h3><p class="muted">${esc(t('Be the first to accept a creator and earn {n}% of all their reported revenue for {m} months – on every future work, even when you work for free.', { n: META.discoverySharePercent, m: META.discoveryMonths }))}</p></div>
+        <div class="step"><h3>⚡ ${esc(t('Quick review'))}</h3><p class="muted">${esc(t('Submissions pre-filtered to your genres, best fit first, a player that starts at the hook and one-key decisions. 50 submissions in about 15 minutes.'))}</p></div>
+        <div class="step"><h3>🏷 ${esc(t('Feedback in one click'))}</h3><p class="muted">${esc(t('Tick tags instead of writing emails. Creators get one combined report – you get better submissions next time.'))}</p></div>
+      </div>
       <div class="split">
         <div class="panel">
           <h2>${esc(t('List your outlet'))}</h2>
@@ -967,14 +1084,16 @@
     const open = submissions.filter((s) => ['new', 'listening'].includes(s.status));
     const pct = (v) => (v === null || v === undefined ? '—' : `${v}%`);
     app.innerHTML = `
-      <div class="sub-head"><h1>${esc(outlet.name)}</h1><span><a class="btn small" href="#/outlet/${esc(outlet.id)}">${esc(t('Public profile'))}</a> <button class="btn small ghost" id="logout">${esc(t('Log out'))}</button></span></div>
+      <div class="sub-head"><h1>${esc(outlet.name)}</h1><span>${open.length ? `<a class="btn small primary" href="#/curators/quick">⚡ ${esc(t('Quick review ({n})', { n: open.length }))}</a> ` : ''}<a class="btn small" href="#/outlet/${esc(outlet.id)}">${esc(t('Public profile'))}</a> <button class="btn small ghost" id="logout">${esc(t('Log out'))}</button></span></div>
       <div class="stats">
         <div class="stat"><b>${open.length}</b><span>${esc(t('awaiting decision'))}</span></div>
         <div class="stat"><b>${pct(outlet.stats.acceptanceRate)}</b><span>${esc(t('accepted'))}</span></div>
         <div class="stat"><b>${pct(outlet.stats.responseRate)}</b><span>${esc(t('answered on time'))}</span></div>
         <div class="stat"><b>${money(totals.commissionPLN * (1 - fee))}</b><span>${esc(t('your earnings (net)'))}</span></div>
         <div class="stat"><b>${money(totals.duePLN * (1 - fee))}</b><span>${esc(t('awaiting payment'))}</span></div>
+        <div class="stat"><b>${num(d.discoveries)}</b><span>${esc(t('creators you discovered'))}</span></div>
       </div>
+      <p class="muted small">🔭 ${esc(t('Discovery share: be the first to accept a creator and earn {n}% of their revenue for {m} months.', { n: META.discoverySharePercent, m: META.discoveryMonths }))}</p>
       <label class="check"><input type="checkbox" id="acceptToggle" ${outlet.acceptsSubmissions ? 'checked' : ''}> ${esc(t('I accept new submissions'))}</label>
       <details><summary>${esc(t('Edit profile and terms'))}</summary><div class="panel"><form class="form" id="ef">${outletFormFields(outlet)}<button class="btn primary" type="submit">${esc(t('Save'))}</button></form></div></details>
       <br>
@@ -986,7 +1105,7 @@
         return `
         <div class="sub">
           <div class="sub-head">
-            <div><b>${esc(s.artistName)} – ${esc(s.trackTitle)}</b> <span class="muted small">${esc(s.genre ? genre(s.genre) : '')} · ${date(s.createdAt)}</span>${s.artistSlug ? ` <a class="tag" href="#/creator/${esc(s.artistSlug)}">${esc(t('press kit'))} · ${esc(s.artistLevel)}</a>` : ''}</div>
+            <div><b>${esc(s.artistName)} – ${esc(s.trackTitle)}</b> <span class="muted small">${esc(s.genre ? genre(s.genre) : '')} · ${date(s.createdAt)}</span>${s.artistSlug ? ` <a class="tag" href="#/creator/${esc(s.artistSlug)}">${esc(t('press kit'))} · ${esc(s.artistLevel)}</a>` : ''}${s.discovery ? ` <span class="tag tag-ok">🔭 ${esc(t('your discovery'))}</span>` : ''}</div>
             ${statusBadge(s.status)}
           </div>
           <p><a href="${esc(s.trackUrl)}" target="_blank" rel="noopener noreferrer nofollow">▶ ${esc(t('Open the work'))}</a> · <a href="mailto:${esc(s.artistEmail)}">${esc(s.artistEmail)}</a>${s.releaseDate ? ` · ${esc(t('release {date}', { date: s.releaseDate }))}` : ''}</p>
@@ -998,6 +1117,7 @@
               <div class="field"><label>${esc(t('Scheduled date'))}</label><input name="scheduledFor" type="date" value="${esc(s.scheduledFor)}"></div>
               <div class="field"><label>${esc(t('Placement link'))}</label><input name="placementUrl" type="url" value="${esc(s.placementUrl)}" placeholder="https://"></div>
               <div class="field"><label>${esc(t('Feedback for the creator'))}</label><input name="curatorNote" maxlength="2000" value="${esc(s.curatorNote)}"></div>
+              <div class="field wide">${tagChips(s.creatorType, (s.feedback && s.feedback.tags) || [])}</div>
               <button class="btn primary" type="submit">${esc(t('Save'))}</button>
             </form>` : (s.curatorNote ? `<p class="small">💬 ${esc(s.curatorNote)}</p>` : '')}
           ${s.settlement.agreementTo ? `<p class="muted small">${esc(t('Agreement: {from} – {to}, {rate}%', { from: s.settlement.agreementFrom, to: s.settlement.agreementTo, rate: s.agreement.ratePercent }))}</p>${revenueTable(s, { curatorKey: session.key })}` : ''}
@@ -1012,7 +1132,8 @@
     bindModelToggle(ef);
     onSubmit(ef, async () => { await api('PATCH', `/api/outlets/${outlet.id}`, outletPayload(ef), h); toast(t('Profile saved. New terms apply to new submissions only.')); viewCuratorInbox(session); });
     app.querySelectorAll('form[data-sub]').forEach((f) => onSubmit(f, async (d) => {
-      await api('PATCH', `/api/submissions/${f.dataset.sub}`, d, h);
+      delete d.tag;
+      await api('PATCH', `/api/submissions/${f.dataset.sub}`, { ...d, feedbackTags: checkedTags(f) }, h);
       toast(t('Decision saved.'));
       viewCuratorInbox(session);
     }));
@@ -1020,6 +1141,94 @@
       const [sid, rid] = b.dataset.paid.split('|');
       try { await api('PATCH', `/api/submissions/${sid}/revenue/${rid}`, { paid: true }, h); viewCuratorInbox(session); } catch (e) { toast(e.message, true); }
     }));
+  }
+
+  // Quick review: one submission at a time, player starting at the hook, one-key decisions.
+  let quickKeys = null;
+  async function viewQuickReview() {
+    const session = storage.get('curator');
+    if (!session) { location.hash = '#/curators'; return; }
+    const h = { 'x-manage-key': session.key };
+    const { outlet, queue } = await api('GET', `/api/outlets/${encodeURIComponent(session.id)}/queue`, null, h);
+    const started = Date.now();
+    let i = 0;
+    let done = 0;
+    let timer = null;
+
+    function summary() {
+      const min = Math.max(1, Math.round((Date.now() - started) / 60000));
+      app.innerHTML = `<h1>⚡ ${esc(t('Queue cleared'))}</h1>
+        <div class="notice ok">${esc(t('{n} decisions in {m} min. Creators get your feedback as one combined report.', { n: done, m: min }))}</div>
+        <a class="btn primary" href="#/curators">${esc(t('Back to the inbox'))}</a>`;
+    }
+
+    async function decide(status) {
+      const s = queue[i];
+      const form = document.getElementById('qf');
+      if (status !== 'skip' && !(status === 'listening' && s.status === 'listening')) {
+        await api('PATCH', `/api/submissions/${s.id}`, { status, feedbackTags: checkedTags(form), curatorNote: form.curatorNote.value }, h);
+        done += 1;
+      }
+      i += 1;
+      render();
+    }
+
+    function render() {
+      clearInterval(timer);
+      if (i >= queue.length) return summary();
+      const s = queue[i];
+      const embed = embedUrl(s.trackUrl);
+      app.innerHTML = `
+        <div class="sub-head"><h1>⚡ ${esc(t('Quick review'))} <span class="muted small">${esc(outlet.name)}</span></h1><span class="muted">${i + 1} / ${queue.length}</span></div>
+        <p class="muted small">${esc(t('Keys: A accept · L later · R decline · 1–9 feedback tags · S skip'))}</p>
+        <div class="panel qr">
+          <div class="sub-head">
+            <div><b>${esc(s.artistName)} – ${esc(s.trackTitle)}</b> <span class="muted small">${esc(s.genre ? genre(s.genre) : '')}</span>
+              ${s.genreFit ? '' : `<span class="tag">${esc(t('outside your genres'))}</span>`}
+              ${s.artistSlug ? `<a class="tag" href="#/creator/${esc(s.artistSlug)}" target="_blank">${esc(t('press kit'))} · ${esc(s.artistLevel)}</a>` : ''}</div>
+            <span class="level">${esc(t('Fit {n}', { n: s.fit }))}</span>
+          </div>
+          ${embed ? `<iframe class="player" src="${esc(embed)}" allow="encrypted-media; autoplay" loading="lazy" title="${esc(s.trackTitle)}"></iframe>` : ''}
+          <p><a href="${esc(s.trackUrl)}" target="_blank" rel="noopener noreferrer nofollow">▶ ${esc(t('Open the work'))}</a> · ⏱ <span id="qtimer" class="timer">30</span> ${esc(t('s to the hook decision'))} · ${esc(t('reply by {date}', { date: date(s.deadline) }))}</p>
+          ${s.message ? `<p class="muted">${esc(s.message)}</p>` : ''}
+          <form id="qf" class="form">
+            ${tagChips(s.creatorType, [], { numbered: true })}
+            <div class="field"><label>${esc(t('Feedback for the creator'))}</label><input name="curatorNote" maxlength="2000"></div>
+            <div class="cta-row">
+              <button type="button" class="btn primary" data-dec="accepted">✓ ${esc(t('Accept'))} (A)</button>
+              ${s.status === 'new' ? `<button type="button" class="btn" data-dec="listening">⏸ ${esc(t('Later'))} (L)</button>` : ''}
+              <button type="button" class="btn" data-dec="rejected">✕ ${esc(t('Decline'))} (R)</button>
+              <button type="button" class="btn ghost" data-dec="skip">→ ${esc(t('Skip'))} (S)</button>
+            </div>
+          </form>
+        </div>`;
+      let left = 30;
+      timer = setInterval(() => {
+        left -= 1;
+        const el = document.getElementById('qtimer');
+        if (!el || left < 0) { clearInterval(timer); return; }
+        el.textContent = left;
+        if (left === 0) el.classList.add('done');
+      }, 1000);
+      app.querySelectorAll('[data-dec]').forEach((b) => b.addEventListener('click', () => decide(b.dataset.dec).catch((e) => toast(e.message, true))));
+    }
+
+    quickKeys = (e) => {
+      if (e.target.matches('input[type=text], input:not([type]), textarea')) return;
+      const k = e.key.toLowerCase();
+      const map = { a: 'accepted', l: 'listening', r: 'rejected', s: 'skip' };
+      if (map[k] && i < queue.length) { e.preventDefault(); decide(map[k]).catch((err) => toast(err.message, true)); return; }
+      if (/^[1-9]$/.test(k)) {
+        const box = app.querySelectorAll('#qf [name=tag]')[Number(k) - 1];
+        if (box) box.checked = !box.checked;
+      }
+    };
+    document.addEventListener('keydown', quickKeys);
+    if (!queue.length) {
+      app.innerHTML = `<h1>⚡ ${esc(t('Quick review'))}</h1><div class="empty">${esc(t('Nothing waiting – all submissions have a decision.'))} <a href="#/curators">${esc(t('Back to the inbox'))}</a></div>`;
+      return;
+    }
+    render();
   }
 
   // ---------- admin ----------
@@ -1263,15 +1472,18 @@
     [/^#\/(campaign|kampania)$/, viewCampaign],
     [/^#\/(channels|kanaly)$/, viewChannels],
     [/^#\/(curators|kurator)$/, viewCurators],
+    [/^#\/(?:curators|kurator)\/quick$/, viewQuickReview],
+    [/^#\/verify\/([A-Za-z0-9]{6,20})$/, viewVerify],
     [/^#\/admin$/, viewAdmin],
     [/^#\/admin\/(?:database|baza)$/, viewAdminEntities],
   ];
-  const ID_ROUTES = new Set([viewOutlet, viewEpk]);
+  const ID_ROUTES = new Set([viewOutlet, viewEpk, viewVerify]);
 
   async function route() {
     const hash = location.hash || '#/';
     document.querySelectorAll('#nav a').forEach((a) => a.classList.toggle('active', hash.startsWith(a.getAttribute('href'))));
     document.getElementById('nav').classList.remove('open');
+    if (quickKeys) { document.removeEventListener('keydown', quickKeys); quickKeys = null; }
     const match = routes.find(([re]) => re.test(hash));
     if (!match) { app.innerHTML = `<div class="empty">${esc(t('Page not found.'))} <a href="#/">${esc(t('Home'))}</a></div>`; return; }
     try {

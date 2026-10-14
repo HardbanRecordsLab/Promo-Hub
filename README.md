@@ -16,6 +16,11 @@ Strategy, market map and partner plan (PL): [docs/STRATEGIA.md](docs/STRATEGIA.m
 - **Creator Path** (`#/creator`) – 5 levels with measurable thresholds, next steps and a public press kit (`#/creator/<slug>`).
 - **Access Ladder** – outlets can require a minimum creator level.
 - **Guaranteed response** – submissions without a decision expire and lower the curator’s ranking.
+- **Acceptance odds before sending** (`#/match`) – a % chance per outlet from its real decisions (Beta-binomial on the outlet's history, genre and creator level) plus its most common decline reason.
+- **“What to fix” report** (creator panel) – curators tick feedback tags; every curator's feedback becomes one report per work with consensus priorities and concrete advice.
+- **Verified creator passport** (press kit) – Momentum score 0–1000 and a public code for every placement, checkable by labels and bookers at `#/verify/<code>`.
+- **Discovery share** – the first outlet to accept a creator earns `DISCOVERY_SHARE_PERCENT` % (default 2) of the creator's reported revenue for `DISCOVERY_MONTHS` months (default 24), inside the Effect Pool cap; terms are frozen at submission.
+- **Quick review for curators** (`#/curators/quick`) – queue sorted by fit, embedded player starting at 0:30, keyboard decisions (A/L/R/S) and tags (1–9).
 
 ## Global Entity Database – where to find it
 
@@ -43,6 +48,8 @@ No external dependencies (Node ≥ 18). Data is stored in `data/db.json` (`DB_FI
 | `ADMIN_TOKEN` | admin panel token (`#/admin`); without it the panel is disabled |
 | `PLATFORM_FEE_PERCENT` | platform share of every curator commission and review fee (default 20) |
 | `TRACK_COMMISSION_CAP_PERCENT` | cap on the total commission of all curators of one work (default 30) |
+| `DISCOVERY_SHARE_PERCENT` | discovery share of the first outlet that accepted a creator (default 2) |
+| `DISCOVERY_MONTHS` | how long the discovery share lasts (default 24) |
 | `DB_FILE` | database file path |
 
 ## How the platform earns

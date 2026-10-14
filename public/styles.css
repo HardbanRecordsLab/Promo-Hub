@@ -237,3 +237,27 @@ details.inline[open] { display: block; width: 100%; }
   .epk { grid-template-columns: 1fr; justify-items: start; }
   .sim-grid { grid-template-columns: 1fr; }
 }
+
+/* ---------- acceptance odds, feedback tags, passport, quick review ---------- */
+.odds { margin: .4rem 0; padding: .45rem .65rem; border-radius: 10px; background: var(--surface-2); border-left: 4px solid var(--muted); }
+.odds-hi { border-color: var(--ok); }
+.odds-mid { border-color: var(--warn); }
+.odds-lo { border-color: var(--bad); }
+.chips { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; margin: .35rem 0; }
+.chip { display: inline-flex; align-items: center; gap: .3rem; padding: .2rem .6rem; border-radius: 99px; border: 1px solid var(--border); background: var(--surface-2); font-size: .82rem; cursor: pointer; }
+.chip input { margin: 0; accent-color: var(--accent-2); }
+.chip.strength:has(input:checked) { border-color: var(--ok); color: var(--ok); }
+.chip.fix:has(input:checked) { border-color: var(--warn); color: var(--warn); }
+.chip kbd { font: inherit; font-size: .72rem; padding: 0 .3rem; border-radius: 4px; background: var(--border); }
+.field.wide { flex-basis: 100%; }
+.big-num { font-size: 2.2rem; line-height: 1; margin-right: .2rem; }
+.bars { display: grid; gap: .3rem; }
+.bar { display: grid; grid-template-columns: minmax(8rem, 14rem) 1fr 3rem; align-items: center; gap: .6rem; font-size: .85rem; }
+.bar span { color: var(--muted); }
+.bar progress { width: 100%; height: .5rem; accent-color: var(--accent-2); }
+.bar b { text-align: right; }
+.passport { border-color: var(--accent-2); }
+.qr .player { width: 100%; height: 166px; border: 0; border-radius: 10px; margin: .5rem 0; background: var(--surface-2); }
+.timer { font-weight: 800; color: var(--warn); }
+.timer.done { color: var(--ok); }
+@media (max-width: 600px) { .bar { grid-template-columns: 1fr 2.5rem; } .bar progress { grid-column: 1 / -1; grid-row: 2; } }

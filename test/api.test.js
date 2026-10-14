@@ -121,18 +121,21 @@ test('pełny cykl: zgłoszenie → akceptacja → przychód → prowizja → wyp
   r = await api('POST', `/api/submissions/${subId}/revenue`, { period: '2026-06', amountPLN: 500 }, { 'x-artist-key': artistKey });
   assert.equal(r.body.entry.commissionPLN, 0);
   assert.equal(r.body.entry.inAgreement, false);
+  // …but the outlet discovered this creator, so it keeps a 2% discovery share (2% × 500)
+  assert.equal(r.body.discovery.commissionPLN, 10);
 
   r = await api('POST', `/api/submissions/${subId}/revenue`, { period: '2026-04', amountPLN: 1 }, { 'x-artist-key': artistKey });
   assert.equal(r.status, 409);
 
   const inbox = await api('GET', `/api/outlets/${outlet.id}/submissions`, null, { 'x-manage-key': manageKey });
   assert.equal(inbox.status, 200);
-  assert.equal(inbox.body.totals.duePLN, 50);
+  assert.equal(inbox.body.totals.duePLN, 60);
+  assert.equal(inbox.body.discoveries, 1);
   const entryId = inbox.body.submissions[0].revenue[0].id;
 
   r = await api('PATCH', `/api/submissions/${subId}/revenue/${entryId}`, { paid: true }, { 'x-manage-key': manageKey });
   assert.equal(r.body.settlement.paidPLN, 50);
-  assert.equal(r.body.settlement.duePLN, 0);
+  assert.equal(r.body.settlement.duePLN, 10);
 
   const mine = await api('GET', '/api/artist/submissions', null, { 'x-artist-key': artistKey });
   assert.equal(mine.body.submissions.length, 1);
@@ -144,7 +147,7 @@ test('pełny cykl: zgłoszenie → akceptacja → przychód → prowizja → wyp
 
   const admin = await api('GET', '/api/admin/summary', null, { 'x-admin-token': 'admin-secret' });
   assert.equal(admin.status, 200);
-  assert.equal(admin.body.earnings.fromCommissionsPLN, 10);
+  assert.equal(admin.body.earnings.fromCommissionsPLN, 12);
   assert.ok(admin.body.pendingVerification.some((o) => o.id === outlet.id));
   assert.equal((await api('GET', '/api/admin/summary')).status, 403);
 });
