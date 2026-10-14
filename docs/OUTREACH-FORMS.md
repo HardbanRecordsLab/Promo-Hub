@@ -15,12 +15,15 @@ Dzień dobry,
 
 piszę w imieniu HardbanRecords Lab. Uruchamiamy Promo Hub – platformę, która łączy autorów i poetów z wydawnictwami wyłącznie na zasadach współpracy (bez płatnych recenzji, patronatów czy miejsc w programie).
 
+Jedna z naszych zasad: kto pierwszy przyjmie twórcę, dostaje 2% jego przychodów przez 24 miesiące – z każdego kolejnego wydania, nawet jeśli promował go bez opłat.
+
 Czy mogę przesłać krótką informację o tym, jak mogłaby wyglądać nasza współpraca? Wystarczy odpowiedź „tak” albo wskazanie osoby lub adresu, który zajmuje się takimi sprawami.
 
 Jeśli temat Państwa nie interesuje, proszę odpisać „nie” – nie będziemy się więcej kontaktować.
 
 Pozdrawiam serdecznie
 Promo Hub · HardbanRecords Lab
+contact@hardbanrecordslab.online
 ```
 
 ## Indie Shuffle (US, blog)
@@ -37,7 +40,8 @@ I'm writing from HardbanRecords Lab. We are launching Promo Hub, a platform that
 We are onboarding our first partners now and would like Indie Shuffle to be one of them. What you would get:
 - releases pre-matched to your taste, each with a ready press kit;
 - your own terms, genres and monthly volume;
-- a share of the results you help create (streams, sales, bookings), reported transparently.
+- a share of the results you help create (streams, sales, bookings), reported transparently;
+- a discovery share: be the first to accept a creator and you earn 2% of their reported revenue for 24 months – on every future release, even if you featured them for free.
 
 Would you be open to a short call, or should I send the details by e-mail? If someone else handles this, a pointer would be much appreciated.
 
@@ -45,6 +49,7 @@ If you would rather not hear from us, just reply "no" and we will not contact yo
 
 Best regards,
 Promo Hub · HardbanRecords Lab
+contact@hardbanrecordslab.online
 ```
 
 ## triple j Unearthed (AU, radio)
@@ -61,7 +66,8 @@ I'm writing from HardbanRecords Lab. We are launching Promo Hub, a platform that
 We are onboarding our first partners now and would like triple j Unearthed to be one of them. What you would get:
 - new music pre-matched to your format and shows, with broadcast-ready files and complete metadata;
 - your own terms, genres and monthly volume;
-- a share of the results you help create (streams, sales, bookings), reported transparently.
+- a share of the results you help create (streams, sales, bookings), reported transparently;
+- a discovery share: be the first to accept a creator and you earn 2% of their reported revenue for 24 months – on every future release, even if you featured them for free.
 
 Would you be open to a short call, or should I send the details by e-mail? If someone else handles this, a pointer would be much appreciated.
 
@@ -69,6 +75,7 @@ If you would rather not hear from us, just reply "no" and we will not contact yo
 
 Best regards,
 Promo Hub · HardbanRecords Lab
+contact@hardbanrecordslab.online
 ```
 
 ## Couleur3 (RTS) (CH, radio)
@@ -85,7 +92,8 @@ I'm writing from HardbanRecords Lab. We are launching Promo Hub, a platform that
 We are onboarding our first partners now and would like Couleur3 (RTS) to be one of them. What you would get:
 - new music pre-matched to your format and shows, with broadcast-ready files and complete metadata;
 - your own terms, genres and monthly volume;
-- a share of the results you help create (streams, sales, bookings), reported transparently.
+- a share of the results you help create (streams, sales, bookings), reported transparently;
+- a discovery share: be the first to accept a creator and you earn 2% of their reported revenue for 24 months – on every future release, even if you featured them for free.
 
 Would you be open to a short call, or should I send the details by e-mail? If someone else handles this, a pointer would be much appreciated.
 
@@ -93,6 +101,7 @@ If you would rather not hear from us, just reply "no" and we will not contact yo
 
 Best regards,
 Promo Hub · HardbanRecords Lab
+contact@hardbanrecordslab.online
 ```
 
 ## Hype Machine (US, blog)
@@ -109,7 +118,8 @@ I'm writing from HardbanRecords Lab. We are launching Promo Hub, a platform that
 We are onboarding our first partners now and would like Hype Machine to be one of them. What you would get:
 - releases pre-matched to your taste, each with a ready press kit;
 - your own terms, genres and monthly volume;
-- a share of the results you help create (streams, sales, bookings), reported transparently.
+- a share of the results you help create (streams, sales, bookings), reported transparently;
+- a discovery share: be the first to accept a creator and you earn 2% of their reported revenue for 24 months – on every future release, even if you featured them for free.
 
 Would you be open to a short call, or should I send the details by e-mail? If someone else handles this, a pointer would be much appreciated.
 
@@ -117,6 +127,7 @@ If you would rather not hear from us, just reply "no" and we will not contact yo
 
 Best regards,
 Promo Hub · HardbanRecords Lab
+contact@hardbanrecordslab.online
 ```
 
 ## Late Night Record Pool (US, dj)
@@ -133,7 +144,8 @@ I'm writing from HardbanRecords Lab. We are launching Promo Hub, a platform that
 We are onboarding our first partners now and would like Late Night Record Pool to be one of them. What you would get:
 - club-ready tracks pre-matched to your sound, with clean metadata;
 - your own terms, genres and monthly volume;
-- a share of the results you help create (streams, sales, bookings), reported transparently.
+- a share of the results you help create (streams, sales, bookings), reported transparently;
+- a discovery share: be the first to accept a creator and you earn 2% of their reported revenue for 24 months – on every future release, even if you featured them for free.
 
 Would you be open to a short call, or should I send the details by e-mail? If someone else handles this, a pointer would be much appreciated.
 
@@ -141,6 +153,7 @@ If you would rather not hear from us, just reply "no" and we will not contact yo
 
 Best regards,
 Promo Hub · HardbanRecords Lab
+contact@hardbanrecordslab.online
 ```
 
 ## Linecheck (IT, festival)
@@ -157,7 +170,8 @@ I'm writing from HardbanRecords Lab. We are launching Promo Hub, a platform that
 We are onboarding our first partners now and would like Linecheck to be one of them. What you would get:
 - artists with measurable traction, pre-filtered for your programme and showcase slots;
 - your own terms, genres and monthly volume;
-- a share of the results you help create (streams, sales, bookings), reported transparently.
+- a share of the results you help create (streams, sales, bookings), reported transparently;
+- a discovery share: be the first to accept a creator and you earn 2% of their reported revenue for 24 months – on every future release, even if you featured them for free.
 
 Would you be open to a short call, or should I send the details by e-mail? If someone else handles this, a pointer would be much appreciated.
 
@@ -165,6 +179,7 @@ If you would rather not hear from us, just reply "no" and we will not contact yo
 
 Best regards,
 Promo Hub · HardbanRecords Lab
+contact@hardbanrecordslab.online
 ```
 
 ## Litro (GB, magazine)
@@ -181,7 +196,8 @@ I'm writing from HardbanRecords Lab. We are launching Promo Hub, a platform that
 We are onboarding our first partners now and would like Litro to be one of them. What you would get:
 - books and authors pre-matched to your readers, each with a ready press kit and review copies;
 - your own terms, genres and monthly volume;
-- a share of the results you help create (book sales, readings, rights deals), reported transparently.
+- a share of the results you help create (book sales, readings, rights deals), reported transparently;
+- a discovery share: be the first to accept a creator and you earn 2% of their reported revenue for 24 months – on every future release, even if you featured them for free.
 
 Would you be open to a short call, or should I send the details by e-mail? If someone else handles this, a pointer would be much appreciated.
 
@@ -189,6 +205,7 @@ If you would rather not hear from us, just reply "no" and we will not contact yo
 
 Best regards,
 Promo Hub · HardbanRecords Lab
+contact@hardbanrecordslab.online
 ```
 
 ## Radio Paradise (US, webradio)
@@ -205,7 +222,8 @@ I'm writing from HardbanRecords Lab. We are launching Promo Hub, a platform that
 We are onboarding our first partners now and would like Radio Paradise to be one of them. What you would get:
 - new music pre-matched to your format, with broadcast-ready files and complete metadata;
 - your own terms, genres and monthly volume;
-- a share of the results you help create (streams, sales, bookings), reported transparently.
+- a share of the results you help create (streams, sales, bookings), reported transparently;
+- a discovery share: be the first to accept a creator and you earn 2% of their reported revenue for 24 months – on every future release, even if you featured them for free.
 
 Would you be open to a short call, or should I send the details by e-mail? If someone else handles this, a pointer would be much appreciated.
 
@@ -213,6 +231,7 @@ If you would rather not hear from us, just reply "no" and we will not contact yo
 
 Best regards,
 Promo Hub · HardbanRecords Lab
+contact@hardbanrecordslab.online
 ```
 
 ## Rás 2 (RÚV) (IS, radio)
@@ -229,7 +248,8 @@ I'm writing from HardbanRecords Lab. We are launching Promo Hub, a platform that
 We are onboarding our first partners now and would like Rás 2 (RÚV) to be one of them. What you would get:
 - new music pre-matched to your format and shows, with broadcast-ready files and complete metadata;
 - your own terms, genres and monthly volume;
-- a share of the results you help create (streams, sales, bookings), reported transparently.
+- a share of the results you help create (streams, sales, bookings), reported transparently;
+- a discovery share: be the first to accept a creator and you earn 2% of their reported revenue for 24 months – on every future release, even if you featured them for free.
 
 Would you be open to a short call, or should I send the details by e-mail? If someone else handles this, a pointer would be much appreciated.
 
@@ -237,6 +257,7 @@ If you would rather not hear from us, just reply "no" and we will not contact yo
 
 Best regards,
 Promo Hub · HardbanRecords Lab
+contact@hardbanrecordslab.online
 ```
 
 ## Saving Country Music (US, press)
@@ -253,7 +274,8 @@ I'm writing from HardbanRecords Lab. We are launching Promo Hub, a platform that
 We are onboarding our first partners now and would like Saving Country Music to be one of them. What you would get:
 - releases and stories pre-matched to your beat, each with a ready press kit;
 - your own terms, genres and monthly volume;
-- a share of the results you help create (streams, sales, bookings), reported transparently.
+- a share of the results you help create (streams, sales, bookings), reported transparently;
+- a discovery share: be the first to accept a creator and you earn 2% of their reported revenue for 24 months – on every future release, even if you featured them for free.
 
 Would you be open to a short call, or should I send the details by e-mail? If someone else handles this, a pointer would be much appreciated.
 
@@ -261,6 +283,7 @@ If you would rather not hear from us, just reply "no" and we will not contact yo
 
 Best regards,
 Promo Hub · HardbanRecords Lab
+contact@hardbanrecordslab.online
 ```
 
 ## Waves Vienna (AT, festival)
@@ -277,7 +300,8 @@ I'm writing from HardbanRecords Lab. We are launching Promo Hub, a platform that
 We are onboarding our first partners now and would like Waves Vienna to be one of them. What you would get:
 - artists with measurable traction, pre-filtered for your programme and showcase slots;
 - your own terms, genres and monthly volume;
-- a share of the results you help create (streams, sales, bookings), reported transparently.
+- a share of the results you help create (streams, sales, bookings), reported transparently;
+- a discovery share: be the first to accept a creator and you earn 2% of their reported revenue for 24 months – on every future release, even if you featured them for free.
 
 Would you be open to a short call, or should I send the details by e-mail? If someone else handles this, a pointer would be much appreciated.
 
@@ -285,6 +309,7 @@ If you would rather not hear from us, just reply "no" and we will not contact yo
 
 Best regards,
 Promo Hub · HardbanRecords Lab
+contact@hardbanrecordslab.online
 ```
 
 ## ZipDJ (US, dj)
@@ -301,7 +326,8 @@ I'm writing from HardbanRecords Lab. We are launching Promo Hub, a platform that
 We are onboarding our first partners now and would like ZipDJ to be one of them. What you would get:
 - club-ready tracks pre-matched to your sound, with clean metadata;
 - your own terms, genres and monthly volume;
-- a share of the results you help create (streams, sales, bookings), reported transparently.
+- a share of the results you help create (streams, sales, bookings), reported transparently;
+- a discovery share: be the first to accept a creator and you earn 2% of their reported revenue for 24 months – on every future release, even if you featured them for free.
 
 Would you be open to a short call, or should I send the details by e-mail? If someone else handles this, a pointer would be much appreciated.
 
@@ -309,6 +335,7 @@ If you would rather not hear from us, just reply "no" and we will not contact yo
 
 Best regards,
 Promo Hub · HardbanRecords Lab
+contact@hardbanrecordslab.online
 ```
 
 ## Double J (AU, radio)
@@ -325,7 +352,8 @@ I'm writing from HardbanRecords Lab. We are launching Promo Hub, a platform that
 We are onboarding our first partners now and would like Double J to be one of them. What you would get:
 - new music pre-matched to your format and shows, with broadcast-ready files and complete metadata;
 - your own terms, genres and monthly volume;
-- a share of the results you help create (streams, sales, bookings), reported transparently.
+- a share of the results you help create (streams, sales, bookings), reported transparently;
+- a discovery share: be the first to accept a creator and you earn 2% of their reported revenue for 24 months – on every future release, even if you featured them for free.
 
 Would you be open to a short call, or should I send the details by e-mail? If someone else handles this, a pointer would be much appreciated.
 
@@ -333,6 +361,7 @@ If you would rather not hear from us, just reply "no" and we will not contact yo
 
 Best regards,
 Promo Hub · HardbanRecords Lab
+contact@hardbanrecordslab.online
 ```
 
 ## J-WAVE (JP, radio)
@@ -349,7 +378,8 @@ I'm writing from HardbanRecords Lab. We are launching Promo Hub, a platform that
 We are onboarding our first partners now and would like J-WAVE to be one of them. What you would get:
 - new music pre-matched to your format and shows, with broadcast-ready files and complete metadata;
 - your own terms, genres and monthly volume;
-- a share of the results you help create (streams, sales, bookings), reported transparently.
+- a share of the results you help create (streams, sales, bookings), reported transparently;
+- a discovery share: be the first to accept a creator and you earn 2% of their reported revenue for 24 months – on every future release, even if you featured them for free.
 
 Would you be open to a short call, or should I send the details by e-mail? If someone else handles this, a pointer would be much appreciated.
 
@@ -357,6 +387,7 @@ If you would rather not hear from us, just reply "no" and we will not contact yo
 
 Best regards,
 Promo Hub · HardbanRecords Lab
+contact@hardbanrecordslab.online
 ```
 
 ## Monstercat (CA, label)
@@ -373,7 +404,8 @@ I'm writing from HardbanRecords Lab. We are launching Promo Hub, a platform that
 We are onboarding our first partners now and would like Monstercat to be one of them. What you would get:
 - A&R-ready artists with a track record and audience data, filtered by your genres;
 - your own terms, genres and monthly volume;
-- a share of the results you help create (streams, sales, bookings), reported transparently.
+- a share of the results you help create (streams, sales, bookings), reported transparently;
+- a discovery share: be the first to accept a creator and you earn 2% of their reported revenue for 24 months – on every future release, even if you featured them for free.
 
 Would you be open to a short call, or should I send the details by e-mail? If someone else handles this, a pointer would be much appreciated.
 
@@ -381,6 +413,7 @@ If you would rather not hear from us, just reply "no" and we will not contact yo
 
 Best regards,
 Promo Hub · HardbanRecords Lab
+contact@hardbanrecordslab.online
 ```
 
 ## The Current (MPR) (US, radio)
@@ -397,7 +430,8 @@ I'm writing from HardbanRecords Lab. We are launching Promo Hub, a platform that
 We are onboarding our first partners now and would like The Current (MPR) to be one of them. What you would get:
 - new music pre-matched to your format and shows, with broadcast-ready files and complete metadata;
 - your own terms, genres and monthly volume;
-- a share of the results you help create (streams, sales, bookings), reported transparently.
+- a share of the results you help create (streams, sales, bookings), reported transparently;
+- a discovery share: be the first to accept a creator and you earn 2% of their reported revenue for 24 months – on every future release, even if you featured them for free.
 
 Would you be open to a short call, or should I send the details by e-mail? If someone else handles this, a pointer would be much appreciated.
 
@@ -405,6 +439,7 @@ If you would rather not hear from us, just reply "no" and we will not contact yo
 
 Best regards,
 Promo Hub · HardbanRecords Lab
+contact@hardbanrecordslab.online
 ```
 
 ## The Sun Magazine (US, magazine)
@@ -421,7 +456,8 @@ I'm writing from HardbanRecords Lab. We are launching Promo Hub, a platform that
 We are onboarding our first partners now and would like The Sun Magazine to be one of them. What you would get:
 - books and authors pre-matched to your readers, each with a ready press kit and review copies;
 - your own terms, genres and monthly volume;
-- a share of the results you help create (book sales, readings, rights deals), reported transparently.
+- a share of the results you help create (book sales, readings, rights deals), reported transparently;
+- a discovery share: be the first to accept a creator and you earn 2% of their reported revenue for 24 months – on every future release, even if you featured them for free.
 
 Would you be open to a short call, or should I send the details by e-mail? If someone else handles this, a pointer would be much appreciated.
 
@@ -429,6 +465,7 @@ If you would rather not hear from us, just reply "no" and we will not contact yo
 
 Best regards,
 Promo Hub · HardbanRecords Lab
+contact@hardbanrecordslab.online
 ```
 
 ## Toolroom Records (GB, label)
@@ -445,7 +482,8 @@ I'm writing from HardbanRecords Lab. We are launching Promo Hub, a platform that
 We are onboarding our first partners now and would like Toolroom Records to be one of them. What you would get:
 - A&R-ready artists with a track record and audience data, filtered by your genres;
 - your own terms, genres and monthly volume;
-- a share of the results you help create (streams, sales, bookings), reported transparently.
+- a share of the results you help create (streams, sales, bookings), reported transparently;
+- a discovery share: be the first to accept a creator and you earn 2% of their reported revenue for 24 months – on every future release, even if you featured them for free.
 
 Would you be open to a short call, or should I send the details by e-mail? If someone else handles this, a pointer would be much appreciated.
 
@@ -453,6 +491,7 @@ If you would rather not hear from us, just reply "no" and we will not contact yo
 
 Best regards,
 Promo Hub · HardbanRecords Lab
+contact@hardbanrecordslab.online
 ```
 
 ## WXPN (US, radio)
@@ -469,7 +508,8 @@ I'm writing from HardbanRecords Lab. We are launching Promo Hub, a platform that
 We are onboarding our first partners now and would like WXPN to be one of them. What you would get:
 - new music pre-matched to your format and shows, with broadcast-ready files and complete metadata;
 - your own terms, genres and monthly volume;
-- a share of the results you help create (streams, sales, bookings), reported transparently.
+- a share of the results you help create (streams, sales, bookings), reported transparently;
+- a discovery share: be the first to accept a creator and you earn 2% of their reported revenue for 24 months – on every future release, even if you featured them for free.
 
 Would you be open to a short call, or should I send the details by e-mail? If someone else handles this, a pointer would be much appreciated.
 
@@ -477,6 +517,7 @@ If you would rather not hear from us, just reply "no" and we will not contact yo
 
 Best regards,
 Promo Hub · HardbanRecords Lab
+contact@hardbanrecordslab.online
 ```
 
 ## Radio X (GB, radio)
@@ -493,7 +534,8 @@ I'm writing from HardbanRecords Lab. We are launching Promo Hub, a platform that
 We are onboarding our first partners now and would like Radio X to be one of them. What you would get:
 - new music pre-matched to your format and shows, with broadcast-ready files and complete metadata;
 - your own terms, genres and monthly volume;
-- a share of the results you help create (streams, sales, bookings), reported transparently.
+- a share of the results you help create (streams, sales, bookings), reported transparently;
+- a discovery share: be the first to accept a creator and you earn 2% of their reported revenue for 24 months – on every future release, even if you featured them for free.
 
 Would you be open to a short call, or should I send the details by e-mail? If someone else handles this, a pointer would be much appreciated.
 
@@ -501,6 +543,7 @@ If you would rather not hear from us, just reply "no" and we will not contact yo
 
 Best regards,
 Promo Hub · HardbanRecords Lab
+contact@hardbanrecordslab.online
 ```
 
 ## The Paris Review (US, magazine)
@@ -517,7 +560,8 @@ I'm writing from HardbanRecords Lab. We are launching Promo Hub, a platform that
 We are onboarding our first partners now and would like The Paris Review to be one of them. What you would get:
 - books and authors pre-matched to your readers, each with a ready press kit and review copies;
 - your own terms, genres and monthly volume;
-- a share of the results you help create (book sales, readings, rights deals), reported transparently.
+- a share of the results you help create (book sales, readings, rights deals), reported transparently;
+- a discovery share: be the first to accept a creator and you earn 2% of their reported revenue for 24 months – on every future release, even if you featured them for free.
 
 Would you be open to a short call, or should I send the details by e-mail? If someone else handles this, a pointer would be much appreciated.
 
@@ -525,4 +569,5 @@ If you would rather not hear from us, just reply "no" and we will not contact yo
 
 Best regards,
 Promo Hub · HardbanRecords Lab
+contact@hardbanrecordslab.online
 ```

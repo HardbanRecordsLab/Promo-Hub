@@ -1,6 +1,6 @@
 # Outreach do partnerów – kampania #1 (październik 2026)
 
-Pierwsza fala zapytań o współpracę do podmiotów ze Światowej Bazy (`lib/entities-seed.js`). Nadawca: Gmail HardbanRecords Lab, podpis „Promo Hub · HardbanRecords Lab”.
+Pierwsza fala zapytań o współpracę do podmiotów ze Światowej Bazy (`lib/entities-seed.js`). Nadawca: **contact@hardbanrecordslab.online** (adres w domenie firmy), podpis „Promo Hub · HardbanRecords Lab” + adres kontaktowy.
 
 ## Stan
 
@@ -45,7 +45,8 @@ I'm writing from HardbanRecords Lab. We are launching Promo Hub, a platform that
 We are onboarding our first partners now and would like {name} to be one of them. What you would get:
 - new music pre-matched to your format and shows, with broadcast-ready files and complete metadata;
 - your own terms, genres and monthly volume;
-- a share of the results you help create (streams, sales, bookings), reported transparently.
+- a share of the results you help create (streams, sales, bookings), reported transparently;
+- a discovery share: be the first to accept a creator and you earn 2% of their reported revenue for 24 months – on every future release, even if you featured them for free.
 
 Would you be open to a short call, or should I send the details by e-mail? If someone else handles this, a pointer would be much appreciated.
 
@@ -53,6 +54,7 @@ If you would rather not hear from us, just reply "no" and we will not contact yo
 
 Best regards,
 Promo Hub · HardbanRecords Lab
+contact@hardbanrecordslab.online
 ```
 
 **PL (zapytanie o zgodę):**
@@ -64,15 +66,28 @@ Dzień dobry,
 
 piszę w imieniu HardbanRecords Lab. Uruchamiamy Promo Hub – platformę, która łączy niezależnych muzyków, DJ-ów i producentów ze stacjami radiowymi i audycjami wyłącznie na zasadach współpracy (bez płatnych miejsc w audycjach, playlistach czy publikacjach).
 
+Jedna z naszych zasad: kto pierwszy przyjmie twórcę, dostaje 2% jego przychodów przez 24 miesiące – z każdego kolejnego wydania, nawet jeśli promował go bez opłat.
+
 Czy mogę przesłać krótką informację o tym, jak mogłaby wyglądać nasza współpraca? Wystarczy odpowiedź „tak” albo wskazanie osoby lub adresu, który zajmuje się takimi sprawami.
 
 Jeśli temat Państwa nie interesuje, proszę odpisać „nie” – nie będziemy się więcej kontaktować.
 
 Pozdrawiam serdecznie
 Promo Hub · HardbanRecords Lab
+contact@hardbanrecordslab.online
 ```
 
 Dla mediów książkowych, festiwali literackich i wydawców tekst mówi o autorach i poetach, książkach, spotkaniach autorskich i prawach – nie o muzyce.
+
+## Wysyłka z domeny hardbanrecordslab.online
+
+Przed pierwszą paczką (inaczej maile wpadną do spamu):
+
+1. **SPF** – rekord TXT domeny zawiera serwer, z którego wysyłasz (np. `v=spf1 include:_spf.google.com ~all` dla Google Workspace).
+2. **DKIM** – włączony u dostawcy poczty i opublikowany jako rekord TXT.
+3. **DMARC** – na start `v=DMARC1; p=none; rua=mailto:contact@hardbanrecordslab.online`.
+4. Jeśli szkice zostają w Gmailu: Ustawienia → Konta → „Wyślij pocztę jako” → dodaj contact@hardbanrecordslab.online (SMTP dostawcy domeny) i w każdym szkicu wybierz ten adres w polu „Od”.
+5. Nowa domena = rozgrzewka: pierwsze dni po 20–30 maili, potem ~50 dziennie.
 
 ## Po wysyłce
 
